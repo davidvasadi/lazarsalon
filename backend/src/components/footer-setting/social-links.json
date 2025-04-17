@@ -1,0 +1,16 @@
+{
+  "collectionName": "components_footer_setting_social_links",
+  "info": {
+    "displayName": "SocialLinks",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "Platform": {
+      "type": "string"
+    },
+    "URL": {
+      "type": "string"
+    }
+  }
+}

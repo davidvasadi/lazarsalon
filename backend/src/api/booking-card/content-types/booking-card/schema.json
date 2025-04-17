@@ -1,0 +1,41 @@
+{
+  "kind": "collectionType",
+  "collectionName": "booking_cards",
+  "info": {
+    "singularName": "booking-card",
+    "pluralName": "booking-cards",
+    "displayName": "Booking Card"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "Title": {
+      "type": "string",
+      "required": true
+    },
+    "Description": {
+      "type": "string",
+      "required": true
+    },
+    "Link": {
+      "type": "string"
+    },
+    "Image": {
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ],
+      "type": "media",
+      "multiple": false
+    },
+    "BookingCard": {
+      "displayName": "BookingCard",
+      "type": "component",
+      "repeatable": true,
+      "component": "booking.booking-card"
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "kind": "collectionType",
+  "collectionName": "service_cards",
+  "info": {
+    "singularName": "service-card",
+    "pluralName": "service-cards",
+    "displayName": "Service Card"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "Title": {
+      "type": "string"
+    },
+    "Image": {
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ],
+      "type": "media",
+      "multiple": true
+    },
+    "ServiceCard": {
+      "type": "component",
+      "repeatable": true,
+      "component": "services.service-item"
+    }
+  }
+}

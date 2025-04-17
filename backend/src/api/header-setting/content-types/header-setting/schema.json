@@ -1,0 +1,26 @@
+{
+  "kind": "singleType",
+  "collectionName": "header_settings",
+  "info": {
+    "singularName": "header-setting",
+    "pluralName": "header-settings",
+    "displayName": "Header Settings",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "logoText": {
+      "type": "string"
+    },
+    "tagline": {
+      "type": "string"
+    },
+    "menuItems": {
+      "type": "component",
+      "repeatable": true,
+      "component": "header.menu-item"
+    }
+  }
+}
