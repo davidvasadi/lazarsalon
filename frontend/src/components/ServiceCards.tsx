@@ -7,64 +7,45 @@ import useStrapi from '../hooks/useStrapi';
 // ---------------------------------------------------------------------------
 // Típusdefiníciók
 // ---------------------------------------------------------------------------
-
-// Egy szolgáltatás tétele – a Strapi-ban a ServiceCard mezőn belül érkeznek az adatok,
-// és a mezők nevei "Name", "Duration", "Price".
 interface ServiceItem {
   Name: string;
   Duration: string;
   Price: string;
 }
 
-// Egy szolgáltatás csoport, ha csoportosítva vannak a tételek (például: "Kézápolás").
 interface ServiceGroup {
   subtitle: string;
   items: ServiceItem[];
 }
 
-// A teljes szolgáltatás kártya adatai.
-// Feltételezzük, hogy a Strapi API válaszában ezek a mezők közvetlenül a bejegyzés objektumában érhetők el.
 interface ServiceContent {
   id: number;
-  Title: string; // A kártya címe, például "Hajszolgáltatások" vagy "Körömszolgáltatások"
-  Image: {
-    // A kép mező esetében feltételezzük, hogy az "Image" mező egy tömb,
-    // amelynek első elemében a kép adatai találhatók, például a "url".
-    // Ha több kép is lehet, ezt később bővítheted.
-    [key: string]: any; // egyszerűbbé tesszük a típust
-  };
-  // Ezek közül az egyik tömb lesz kitöltve: vagy a ServiceCard tömb (közvetlen tételek),
-  // vagy a groups tömb, mely csoportosított tételeket tartalmaz.
+  Title: string;
+  Image: { [key: string]: any };
   ServiceCard?: ServiceItem[];
   groups?: ServiceGroup[];
 }
 
-// Az API válasz szerkezete: { data: ServiceContent[], meta: any }
 interface ServiceResponse {
   data: ServiceContent[];
   meta: any;
 }
 
 // ---------------------------------------------------------------------------
-// ServiceCards komponens – a dinamikus adatok alapján rendereli a szolgáltatás kártyákat
+// ServiceCards komponens – Kétoszlopos grid, elemek tetején igazítva
 // ---------------------------------------------------------------------------
 export const ServiceCards: React.FC = () => {
-  // Lekérjük a szolgáltatás kártyákat a Strapi API-ból a populate=* paraméterrel,
-  // hogy minden mezőt betöltsön (például Image, groups.items, ServiceCard)
+  // Strapi API hívás populate=*-gal a képek és csoportok betöltéséhez
   const { data: servicesData, loading, error } = useStrapi<ServiceResponse>(
     '/api/service-cards?populate=*'
   );
 
-  // Ha betöltés folyamatban van, vagy hiba lépett fel, azt egyszerű üzenettel jelezzük.
+  // Betöltés és hiba kezelése
   if (loading) return <div>Szolgáltatások betöltése...</div>;
   if (error) return <div>Hiba történt: {error.message}</div>;
 
-  // A szolgáltatás kártyák adatai a servicesData.data tömbben vannak.
   const services = servicesData?.data || [];
-
-  // Ha a Strapi relatív URL-t ad a képhez, hozzáfűzzük a baseUrl-t
   const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:1337';
-
 
   return (
     <section className="py-32 bg-gradient-to-b from-white to-gray-50">
@@ -98,17 +79,12 @@ export const ServiceCards: React.FC = () => {
           </p>
         </motion.div>
 
-        {/* Kártyák grid elrendezése: desktopon 2 oszlop, mobilon 1 oszlop */}
-        <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-          {services.map((service) => {
-            // A Strapi bejegyzésben a mezők közvetlenül elérhetők,
-            // így egyszerűen szedjük ki a Title, Image, ServiceCard, vagy groups mezőket.
-            const cardTitle = service.Title;
-            // A kép URL-je: ha az Image mező relatív, a baseUrl-t hozzáfűzzük.
+        {/* Kétoszlopos grid elemek tetején igazítva */}
+        <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto items-start">
+          {services.map((service, idx) => {
+            // Kártyához szükséges adatok
+            const items = service.ServiceCard || service.groups?.flatMap(g => g.items) || [];
             const imageUrl = service.Image?.[0]?.url ? `${baseUrl}${service.Image[0].url}` : '';
-            // Tételek: először megpróbáljuk a ServiceCard mezőt, ha nincs, akkor csoportokból flatMap-pel gyűjtjük össze.
-            const items: ServiceItem[] =
-              service.ServiceCard || (service.groups ? service.groups.flatMap((group) => group.items) : []);
 
             return (
               <motion.div
@@ -116,50 +92,47 @@ export const ServiceCards: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.8, delay: service.id * 0.2 }}
-                className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500"
+                transition={{ duration: 0.8, delay: idx * 0.2 }}
+                className="group flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500"
               >
-                {/* Kártya képréteg */}
+                {/* Kép */}
                 <div className="relative h-72 overflow-hidden">
                   <img
                     src={imageUrl}
-                    alt={cardTitle}
+                    alt={service.Title}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 grayscale group-hover:grayscale-0"
                   />
-                  {/* Gradient réteg a kép fölött a szöveg olvashatóságáért */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0" />
-                  {/* A kártya címe a bal alsó sarokban */}
                   <h3 className="absolute bottom-4 left-4 text-2xl text-white font-light">
-                    {cardTitle}
+                    {service.Title}
                   </h3>
                 </div>
-                {/* Kártya tartalmi rész: itt listázzuk a szolgáltatás tételeket */}
-                <div className="p-8">
+
+                {/* Tartalom és gomb */}
+                <div className="p-8 flex-1 flex flex-col">
                   <div className="space-y-4 mb-8">
-                    {items.map((item, idx) => (
+                    {items.map((item, i) => (
                       <div
-                        key={idx}
+                        key={i}
                         className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
                       >
                         <div>
-                          {/* Tételek neve */}
                           <p className="font-medium text-[#1D1D1E]">{item.Name}</p>
                           <div className="flex items-center gap-1 text-sm text-[#38363C]/60">
                             <Clock size={14} />
                             <span>{item.Duration}</span>
                           </div>
                         </div>
-                        {/* Tételek ára */}
                         <p className="text-[#B4943E] font-medium">{item.Price}</p>
                       </div>
                     ))}
                   </div>
-                  {/* Időpontfoglalás gomb, ami a "booking" szekcióra navigál */}
+
                   <Link
                     to="booking"
                     smooth={true}
                     duration={800}
-                    className="flex items-center justify-center gap-2 w-full bg-[#1D1D1E] text-white py-4 rounded-lg hover:bg-black transition-colors group/button cursor-pointer"
+                    className="mt-auto flex items-center justify-center gap-2 w-full bg-[#1D1D1E] text-white py-4 rounded-lg hover:bg-black transition-colors group/button cursor-pointer"
                   >
                     <span>Időpontfoglalás</span>
                     <ArrowRight size={18} className="transition-transform duration-300 group-hover/button:translate-x-1" />
@@ -173,3 +146,5 @@ export const ServiceCards: React.FC = () => {
     </section>
   );
 };
+
+export default ServiceCards;

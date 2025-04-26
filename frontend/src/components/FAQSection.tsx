@@ -32,8 +32,8 @@ export const FAQSection: React.FC = () => {
   };
 
   const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:1337';
-  if (loading) return <div>FAQ betöltése...</div>;
-  if (error) return <div>Hiba történt: {error.message}</div>;
+  // if (loading) return <div>FAQ betöltése...</div>;
+  // if (error) return <div>Hiba történt: {error.message}</div>;
 
   // Kinyerjük a FAQ elemeket a data.FAQItem kulcsból
   const faqs = data?.data?.FAQItem || [];

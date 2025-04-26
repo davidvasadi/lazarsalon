@@ -48,9 +48,9 @@ export const HeroSection: React.FC = () => {
   const { data: heroData, loading, error } = useStrapi<{ data: HeroContent }>('/api/hero-section?populate=heroImage');
 
   // Ha a tartalom még betölt, egy "Hero betöltés..." üzenet jelenik meg.
-  if (loading) return <div>Hero betöltés...</div>;
+  // if (loading) return <div>Hero betöltés...</div>;
   // Ha hiba történik a lekérés során, azt jelenítjük meg.
-  if (error) return <div>Hero hiba: {error.message}</div>;
+  // if (error) return <div>Hero hiba: {error.message}</div>;
 
   // Kinyerjük a hero tartalmat a lekéréstől (heroData?.data tartalmazza az összes adatot).
   const heroContent = heroData?.data;
@@ -140,7 +140,7 @@ export const HeroSection: React.FC = () => {
             transition={{ duration: 1, delay: 0.8 }}
           >
             <Link
-              to={primaryButtonLink}
+              to="booking"
               smooth={true}
               duration={800}
               className="group bg-white bg-opacity-10 backdrop-blur-sm border border-white/20 text-white px-8 py-4 rounded-lg font-light flex items-center justify-center gap-2 hover:bg-white hover:text-[#1D1D1E] transition-all duration-300 transform hover:scale-[1.02] cursor-pointer"

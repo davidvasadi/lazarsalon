@@ -29,8 +29,8 @@ export const Footer: React.FC = () => {
   // Lekérjük a Footer Settings adatokat az adott URL-ről
   const { data, loading, error } = useStrapi<FooterSettingsResponse>('/api/footer-setting?populate=*');
 
-  if (loading) return <div>Footer betöltése...</div>;
-  if (error) return <div>Hiba történt: {error.message}</div>;
+  // if (loading) return <div>Footer betöltése...</div>;
+  // if (error) return <div>Hiba történt: {error.message}</div>;
 
   // Mivel a JSON szerkezeted így néz ki, a footer adatokat közvetlenül a data objektumból olvassuk ki
   const footer = data?.data;

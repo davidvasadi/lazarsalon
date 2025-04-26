@@ -1,21 +1,23 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { InstagramIcon, FacebookIcon, CalendarIcon, ArrowRight } from 'lucide-react';
+import { InstagramIcon, FacebookIcon, CalendarIcon, Globe as GlobeIcon, ArrowRight } from 'lucide-react';
 import { Link } from 'react-scroll';
 import useStrapi from '../hooks/useStrapi';
 
+// ---------------------------------------------------------------------------
 // Típusdefiníciók a Strapi Team Member válaszához (közvetlen mezőkkel)
+// ---------------------------------------------------------------------------
 interface TeamMember {
   id: number;
-  Booking: string;
-  Experience: string;
-  Facebook: string;
-  Image: Array<{ url: string }>;
-  Instagram: string;
-  Name: string;
-  Role: string;
-  Specialty: string;
-  Website: string | null;
+  Booking: string | null;        // Időpontfoglaló link (opcionális)
+  Experience: string;            // Tapasztalat leírása
+  Facebook: string | null;       // Facebook profil URL (opcionális)
+  Image: Array<{ url: string }>; // Kép URL tömb
+  Instagram: string | null;      // Instagram profil URL (opcionális)
+  Website: string | null;        // Személyes weboldal URL (opcionális)
+  Name: string;                  // Név
+  Role: string;                  // Pozíció / szerepkör
+  Specialty: string;             // Szakterület
   createdAt: string;
   documentId: string;
   publishedAt: string;
@@ -27,20 +29,24 @@ interface TeamResponse {
   meta: any;
 }
 
+// ---------------------------------------------------------------------------
+// TeamSection komponens – Dinamikus "Csapatunk" szekció Strapi adatokkal
+// ---------------------------------------------------------------------------
 export const TeamSection: React.FC = () => {
-  // Lekérjük a csapattagokat a Strapi-ból a megfelelő végpontról
+  // Lekérjük a csapattagokat a Strapi API-ból a megfelelő végpontról
   const { data, loading, error } = useStrapi<TeamResponse>('/api/team-members?populate=*');
 
+  // Betöltés és hibakezelés
   if (loading) return <div>Csapat betöltése...</div>;
   if (error) return <div>Hiba történt: {error.message}</div>;
 
-  // A team tömb közvetlenül tartalmazza a csapattag adatait
   const team = data?.data || [];
   const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:1337';
 
   return (
     <section className="py-32 bg-gradient-to-b from-white to-gray-50">
       <div className="container mx-auto px-4">
+        {/* Szekció fejléc */}
         <motion.div
           className="max-w-2xl mx-auto text-center mb-20"
           initial={{ opacity: 0, y: 20 }}
@@ -64,9 +70,11 @@ export const TeamSection: React.FC = () => {
             Ismerje meg professzionális csapatunkat, akik szenvedéllyel és szakértelemmel várják Önt.
           </p>
         </motion.div>
+
+        {/* Csapattagok grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-[1400px] mx-auto">
           {team.map((member) => {
-            // Ellenőrizzük, hogy létezik-e az Image mező, és ha igen, használjuk az első elem URL-jét
+            // Kép URL előállítása (vagy placeholder)
             const imageUrl =
               member.Image && member.Image.length > 0 && member.Image[0].url
                 ? `${baseUrl}${member.Image[0].url}`
@@ -81,13 +89,16 @@ export const TeamSection: React.FC = () => {
                 transition={{ duration: 0.8, delay: member.id * 0.2 }}
                 className="group w-full"
               >
-                <div className="relative overflow-hidden rounded-xl aspect-[3/4] w-full max-h-[400px]">
+                <div className="relative overflow-hidden rounded-xl aspect-[3/4] w-full max-h-[400px] lg:min-w-[300px]">
+                  {/* Tag arckép */}
                   <img
                     src={imageUrl}
                     alt={member.Name}
                     className="w-full h-full object-cover object-center transition-all duration-700 grayscale group-hover:grayscale-0 group-hover:scale-110"
                   />
+                  {/* Gradient réteg */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-100 sm:opacity-0 group-hover:opacity-100 transition-all duration-500" />
+                  {/* Info panel */}
                   <div className="absolute inset-0 p-4 flex flex-col justify-end transform sm:translate-y-8 sm:group-hover:translate-y-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-500">
                     <div className="space-y-1.5">
                       <h3 className="text-white text-lg font-medium leading-tight">{member.Name}</h3>
@@ -95,23 +106,42 @@ export const TeamSection: React.FC = () => {
                       <p className="text-white/90 text-sm leading-tight">{member.Specialty}</p>
                       <p className="text-white/80 text-sm leading-tight mb-3">{member.Experience}</p>
                     </div>
+                    {/* Ikonok és linkek */}
                     <div className="flex items-center gap-3 pt-3 border-t border-white/20">
-                      <a
-                        href={member.Instagram}
-                        className="text-white/90 hover:text-white transition-colors p-1.5"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <InstagramIcon size={18} />
-                      </a>
-                      <a
-                        href={member.Facebook}
-                        className="text-white/90 hover:text-white transition-colors p-1.5"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <FacebookIcon size={18} />
-                      </a>
+                      {/* Instagram, ha létezik */}
+                      {member.Instagram && (
+                        <a
+                          href={member.Instagram}
+                          className="text-white/90 hover:text-white transition-colors p-1.5"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <InstagramIcon size={18} />
+                        </a>
+                      )}
+                      {/* Facebook, ha létezik */}
+                      {member.Facebook && (
+                        <a
+                          href={member.Facebook}
+                          className="text-white/90 hover:text-white transition-colors p-1.5"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <FacebookIcon size={18} />
+                        </a>
+                      )}
+                      {/* Weboldal, ha létezik */}
+                      {member.Website && (
+                        <a
+                          href={member.Website}
+                          className="text-white/90 hover:text-white transition-colors p-1.5"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <GlobeIcon size={18} />
+                        </a>
+                      )}
+                      {/* Időpontfoglaló, ha létezik */}
                       {member.Booking && (
                         <a
                           href={member.Booking}
@@ -135,3 +165,5 @@ export const TeamSection: React.FC = () => {
     </section>
   );
 };
+
+export default TeamSection;
