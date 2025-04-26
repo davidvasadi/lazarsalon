@@ -23,7 +23,7 @@ interface AboutData {
   id: number;
   Title: string;
   Description: string;
-  Introduction: string;
+  Introdution: string;
   Image: Array<{ url: string }> | null;
   AboutService: AboutServiceItem[];
   openingHours: OpeningHour[];
@@ -65,7 +65,7 @@ export const AboutSection: React.FC = () => {
 
   const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:1337';
   const imageUrl = about.Image && about.Image[0]?.url ? `${baseUrl}${about.Image[0].url}` : '';
-  const intro = about.Introduction || about.Description;
+  // const intro = about.Introdution || about.Description;
 
   return (
     <section className="py-32 bg-gradient-to-b from-white to-gray-50">
@@ -119,7 +119,7 @@ export const AboutSection: React.FC = () => {
               <div className="space-y-6">
                 <div className="prose prose-lg">
                   <h3 className="text-2xl font-light text-[#1D1D1E] mb-4">Rólunk</h3>
-                  <p className="text-[#38363C] leading-relaxed">{intro}</p>
+                  <p className="text-[#38363C] leading-relaxed">{about.Introdution}</p>
                 </div>
                 <Link
                   to="booking"
