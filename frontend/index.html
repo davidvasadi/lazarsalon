@@ -1,129 +1,100 @@
 <!DOCTYPE html>
 <html lang="hu">
-  <head>
-    <!-- Karakterkódolás és kompatibilitás -->
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
-    <!-- Reszponzív nézet és safe-area támogatás -->
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-    />
+<head>
+  <!-- Karakterkódolás és kompatibilitás -->
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
-    <!-- Oldal címe és leírás -->
-    <title>Lazars Szépségszalon</title>
-    <meta
-      name="description"
-      content="Lazars Szépségszalon hivatalos weboldala – professzionális szolgáltatások, online időpontfoglalás, exkluzív termékeink és akciók."
-    />
-    <link rel="canonical" href="https://lazarsalon.com/" />
-    <meta name="robots" content="index, follow" />
+  <!-- Reszponzív nézet és safe-area támogatás -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
-    <!-- Favicon-ok és ikonok különböző platformokra -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="alternate icon" type="image/x-icon" href="/favicon.ico" />
-    <link
-      rel="apple-touch-icon"
-      href="/icons/apple-touch-icon.png"
-      sizes="180x180"
-    />
-    <meta name="msapplication-TileColor" content="#d63384" />
-    <meta
-      name="msapplication-TileImage"
-      content="/icons/mstile-144x144.png"
-    />
-    <link
-      rel="mask-icon"
-      href="/icons/safari-pinned-tab.svg"
-      color="#d63384"
-    />
+  <!-- Oldal címe és leírás -->
+  <title>Lazars Szépségszalon</title>
+  <meta name="description"
+    content="Lazars Szépségszalon hivatalos weboldala – professzionális szolgáltatások, online időpontfoglalás, exkluzív termékeink és akciók." />
+  <link rel="canonical" href="https://lazarsalon.com/" />
+  <meta name="robots" content="index, follow" />
 
-    <!-- PWA / manifest -->
-    <link rel="manifest" href="/site.webmanifest" />
-    <meta name="theme-color" content="#d63384" />
+  <!-- Favicon-ok és ikonok különböző platformokra -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="alternate icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" sizes="180x180" />
+  <meta name="msapplication-TileColor" content="#d63384" />
+  <meta name="msapplication-TileImage" content="/icons/mstile-144x144.png" />
+  <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#d63384" />
 
-    <!-- Open Graph – közösségi előnézetekhez -->
-    <meta property="og:locale" content="hu_HU" />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="Lazars Szépségszalon" />
-    <meta
-      property="og:description"
-      content="Fedezd fel professzionális szépségszalon szolgáltatásainkat, foglalj időpontot online!"
-    />
-    <meta property="og:url" content="https://lazarsalon.com/" />
-    <meta
-      property="og:image"
-      content="https://lazarsalon.com/og-image.png"
-    />
+  <!-- PWA / manifest -->
+  <link rel="manifest" href="/site.webmanifest" />
+  <!-- világos témához -->
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+  <!-- sötét témához -->
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#282828" />
 
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@Lazarsalon" />
-    <meta name="twitter:title" content="Lazars Szépségszalon" />
-    <meta
-      name="twitter:description"
-      content="Fedezd fel professzionális szépségszalon szolgáltatásainkat, foglalj időpontot online!"
-    />
-    <meta
-      name="twitter:image"
-      content="https://lazarsalon.com/og-image.png"
-    />
 
-    <!-- Apple PWA meta (iOS standalone) -->
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
-    />
-    <meta name="apple-mobile-web-app-title" content="Lazars Szépségszalon" />
+  <!-- Open Graph – közösségi előnézetekhez -->
+  <meta property="og:locale" content="hu_HU" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Lazars Szépségszalon" />
+  <meta property="og:description"
+    content="Fedezd fel professzionális szépségszalon szolgáltatásainkat, foglalj időpontot online!" />
+  <meta property="og:url" content="https://lazarsalon.com/" />
+  <meta property="og:image" content="https://lazarsalon.com/og-image.png" />
 
-    <!-- Betűtípusok előtöltése (ha Google Fonts-ot használsz) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link
-      rel="preconnect"
-      href="https://fonts.gstatic.com"
-      crossorigin
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"
-      rel="stylesheet"
-    />
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@Lazarsalon" />
+  <meta name="twitter:title" content="Lazars Szépségszalon" />
+  <meta name="twitter:description"
+    content="Fedezd fel professzionális szépségszalon szolgáltatásainkat, foglalj időpontot online!" />
+  <meta name="twitter:image" content="https://lazarsalon.com/og-image.png" />
 
-    <!-- On-site CSS előtöltése (ha van kritikus CSS-ed) -->
-    <!-- <link rel="preload" href="/styles/critical.css" as="style" /> -->
-    <!-- <link href="/styles/main.css" rel="stylesheet" /> -->
-    <style>
-      .sr-only {
-        position: absolute !important;
-        width: 1px; 
-        height: 1px; 
-        padding: 0; 
-        margin: -1px; 
-        overflow: hidden; 
-        clip: rect(0,0,0,0); 
-        white-space: nowrap; 
-        border: 0;
-      }
-    </style>
-  </head>
-  <body>
-    <!-- Skip link a vakoknak és billentyűzetes navigációnak -->
-    <a class="sr-only" href="#root">→ Ugrás a tartalomra</a>
+  <!-- Apple PWA meta (iOS standalone) -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Lazars Szépségszalon" />
 
-    <!-- React root -->
-    <div id="root"></div>
+  <!-- Betűtípusok előtöltése (ha Google Fonts-ot használsz) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
 
-    <!-- JavaScript engedély hiányában üzenet -->
-    <!-- <noscript>
+  <!-- On-site CSS előtöltése (ha van kritikus CSS-ed) -->
+  <!-- <link rel="preload" href="/styles/critical.css" as="style" /> -->
+  <!-- <link href="/styles/main.css" rel="stylesheet" /> -->
+  <style>
+    .sr-only {
+      position: absolute !important;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Skip link a vakoknak és billentyűzetes navigációnak -->
+  <a class="sr-only" href="#root">→ Ugrás a tartalomra</a>
+
+  <!-- React root -->
+  <div id="root"></div>
+
+  <!-- JavaScript engedély hiányában üzenet -->
+  <!-- <noscript>
       <div style="padding:1em; background:#ffe0e0; color:#900;">
         Kérjük, engedélyezd a JavaScriptet a teljes élményért!
       </div>
     </noscript> -->
 
-    <!-- Vite belső script-kezelése -->
-    <script type="module" src="/src/index.tsx"></script>
+  <!-- Vite belső script-kezelése -->
+  <script type="module" src="/src/index.tsx"></script>
 
-  </body>
+</body>
+
 </html>

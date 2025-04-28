@@ -1,23 +1,22 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { InstagramIcon, FacebookIcon, CalendarIcon, Globe as GlobeIcon, ArrowRight } from 'lucide-react';
-import { Link } from 'react-scroll';
 import useStrapi from '../hooks/useStrapi';
 
 // ---------------------------------------------------------------------------
-// Típusdefiníciók a Strapi Team Member válaszához (közvetlen mezőkkel)
+// Típusdefiníciók a Strapi Team Member válaszához
 // ---------------------------------------------------------------------------
 interface TeamMember {
   id: number;
-  Booking: string | null;        // Időpontfoglaló link (opcionális)
-  Experience: string;            // Tapasztalat leírása
-  Facebook: string | null;       // Facebook profil URL (opcionális)
-  Image: Array<{ url: string }>; // Kép URL tömb
-  Instagram: string | null;      // Instagram profil URL (opcionális)
-  Website: string | null;        // Személyes weboldal URL (opcionális)
-  Name: string;                  // Név
-  Role: string;                  // Pozíció / szerepkör
-  Specialty: string;             // Szakterület
+  Booking: string | null;
+  Experience: string;
+  Facebook: string | null;
+  Image: Array<{ url: string }>;
+  Instagram: string | null;
+  Website: string | null;
+  Name: string;
+  Role: string;
+  Specialty: string;
   createdAt: string;
   documentId: string;
   publishedAt: string;
@@ -30,13 +29,33 @@ interface TeamResponse {
 }
 
 // ---------------------------------------------------------------------------
-// TeamSection komponens – Dinamikus "Csapatunk" szekció Strapi adatokkal
+// Animációs variánsok
+// ---------------------------------------------------------------------------
+const containerVariants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.2,
+      delayChildren: 0.2,
+    },
+  },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.7 },
+  },
+};
+
+// ---------------------------------------------------------------------------
+// TeamSection komponens
 // ---------------------------------------------------------------------------
 export const TeamSection: React.FC = () => {
-  // Lekérjük a csapattagokat a Strapi API-ból a megfelelő végpontról
   const { data, loading, error } = useStrapi<TeamResponse>('/api/team-members?populate=*');
 
-  // Betöltés és hibakezelés
   if (loading) return <div>Csapat betöltése...</div>;
   if (error) return <div>Hiba történt: {error.message}</div>;
 
@@ -46,7 +65,7 @@ export const TeamSection: React.FC = () => {
   return (
     <section className="py-32 bg-gradient-to-b from-white to-gray-50">
       <div className="container mx-auto px-4">
-        {/* Szekció fejléc */}
+        {/* Fejléc */}
         <motion.div
           className="max-w-2xl mx-auto text-center mb-20"
           initial={{ opacity: 0, y: 20 }}
@@ -59,11 +78,11 @@ export const TeamSection: React.FC = () => {
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.2 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
           >
-            <span className="h-[1px] w-8 bg-[#B4943E]"></span>
+            <span className="h-[1px] w-8 bg-[#B4943E]" />
             <span className="text-sm font-light tracking-wider uppercase">Csapatunk</span>
-            <span className="h-[1px] w-8 bg-[#B4943E]"></span>
+            <span className="h-[1px] w-8 bg-[#B4943E]" />
           </motion.div>
           <h2 className="text-4xl font-light text-[#1D1D1E] mb-6">Szakértő csapatunk</h2>
           <p className="text-[#38363C]/60 text-lg font-light">
@@ -72,86 +91,62 @@ export const TeamSection: React.FC = () => {
         </motion.div>
 
         {/* Csapattagok grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-[1400px] mx-auto">
+        <motion.div
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
           {team.map((member) => {
-            // Kép URL előállítása (vagy placeholder)
-            const imageUrl =
-              member.Image && member.Image.length > 0 && member.Image[0].url
-                ? `${baseUrl}${member.Image[0].url}`
-                : 'https://via.placeholder.com/400';
+            const imageUrl = member.Image?.[0]?.url ? `${baseUrl}${member.Image[0].url}` : 'https://via.placeholder.com/400';
 
             return (
               <motion.div
                 key={member.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.8, delay: member.id * 0.2 }}
-                className="group w-full"
+                variants={cardVariants}
+                className="group w-full min-w-[280px]"
               >
-                <div className="relative overflow-hidden rounded-xl aspect-[3/4] w-full max-h-[400px] lg:min-w-[300px]">
-                  {/* Tag arckép */}
+                <div className="relative overflow-hidden rounded-xl aspect-[3/4] w-full">
                   <img
                     src={imageUrl}
                     alt={member.Name}
-                    className="w-full h-full object-cover object-center transition-all duration-700 grayscale group-hover:grayscale-0 group-hover:scale-110"
+                    className="w-full h-full object-cover object-center transition-transform duration-1000 grayscale group-hover:grayscale-0 group-hover:scale-110"
                   />
-                  {/* Gradient réteg */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-100 sm:opacity-0 group-hover:opacity-100 transition-all duration-500" />
-                  {/* Info panel */}
-                  <div className="absolute inset-0 p-4 flex flex-col justify-end transform sm:translate-y-8 sm:group-hover:translate-y-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-500">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                  <div className="absolute inset-0 p-4 flex flex-col justify-end transform translate-y-8 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-700">
                     <div className="space-y-1.5">
                       <h3 className="text-white text-lg font-medium leading-tight">{member.Name}</h3>
-                      <p className="text-[#B4943E] font-light text-base leading-tight">{member.Role}</p>
-                      <p className="text-white/90 text-sm leading-tight">{member.Specialty}</p>
-                      <p className="text-white/80 text-sm leading-tight mb-3">{member.Experience}</p>
+                      <p className="text-[#B4943E] font-light text-base">{member.Role}</p>
+                      <p className="text-white/90 text-sm">{member.Specialty}</p>
+                      <p className="text-white/80 text-sm mb-3">{member.Experience}</p>
                     </div>
-                    {/* Ikonok és linkek */}
                     <div className="flex items-center gap-3 pt-3 border-t border-white/20">
-                      {/* Instagram, ha létezik */}
                       {member.Instagram && (
-                        <a
-                          href={member.Instagram}
-                          className="text-white/90 hover:text-white transition-colors p-1.5"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
+                        <a href={member.Instagram} target="_blank" rel="noopener noreferrer" className="p-1.5 text-white/90 hover:text-white transition-colors">
                           <InstagramIcon size={18} />
                         </a>
                       )}
-                      {/* Facebook, ha létezik */}
                       {member.Facebook && (
-                        <a
-                          href={member.Facebook}
-                          className="text-white/90 hover:text-white transition-colors p-1.5"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
+                        <a href={member.Facebook} target="_blank" rel="noopener noreferrer" className="p-1.5 text-white/90 hover:text-white transition-colors">
                           <FacebookIcon size={18} />
                         </a>
                       )}
-                      {/* Weboldal, ha létezik */}
                       {member.Website && (
-                        <a
-                          href={member.Website}
-                          className="text-white/90 hover:text-white transition-colors p-1.5"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
+                        <a href={member.Website} target="_blank" rel="noopener noreferrer" className="p-1.5 text-white/90 hover:text-white transition-colors">
                           <GlobeIcon size={18} />
                         </a>
                       )}
-                      {/* Időpontfoglaló, ha létezik */}
                       {member.Booking && (
                         <a
                           href={member.Booking}
-                          className="ml-auto text-white flex items-center gap-2 group/button text-sm bg-white/10 px-3 py-1.5 rounded-md hover:bg-white/20 transition-all"
                           target="_blank"
                           rel="noopener noreferrer"
+                          className="ml-auto flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-md text-sm text-white hover:bg-white/20 transition-transform duration-300"
                         >
                           <CalendarIcon size={16} />
                           <span>Időpont</span>
-                          <ArrowRight size={14} className="transition-transform duration-300 group-hover/button:translate-x-1" />
+                          <ArrowRight size={14} className="transition-transform duration-300 group-hover:translate-x-1" />
                         </a>
                       )}
                     </div>
@@ -160,7 +155,7 @@ export const TeamSection: React.FC = () => {
               </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

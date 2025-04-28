@@ -1,3 +1,4 @@
+// --- HomePage.tsx ---
 import React from 'react';
 import { Element } from 'react-scroll';
 import { HeroSection } from '../components/HeroSection';
@@ -9,32 +10,45 @@ import { ReviewsSection } from '../components/ReviewsSection';
 import { InstagramFeed } from '../components/InstagramFeed';
 import { FAQSection } from '../components/FAQSection';
 import { BookingSection } from '../components/BookingSection';
-export const HomePage = () => {
-  return <main>
-      <Element name="home">
+
+export const HomePage: React.FC = () => {
+  return (
+    <main>
+      <Element name="fooldal" id="fooldal">
         <HeroSection />
       </Element>
-      <Element name="services">
+
+      <Element name="szolgaltatasok" id="szolgaltatasok">
         <ServiceCards />
       </Element>
-      <Element name="about">
+
+      <Element name="rolunk" id="rolunk">
         <AboutSection />
       </Element>
-      <Element name="team">
+
+      <Element name="csapatunk" id="csapatunk">
         <TeamSection />
       </Element>
-      <Element name="reviews">
+
+      <Element name="ertekelesek" id="ertekelesek">
         <ReviewsSection />
       </Element>
+
       {/* <BlogSection /> */}
-      <Element name="instagram">
+
+      <Element name="instagram" id="instagram">
         <InstagramFeed />
       </Element>
-      <Element name="faq">
+
+      <Element name="gyik" id="gyik">
         <FAQSection />
       </Element>
-      <Element name="booking">
+
+      <Element name="idopontfoglalas" id="idopontfoglalas">
         <BookingSection />
       </Element>
-    </main>;
+    </main>
+  );
 };
+
+export default HomePage;

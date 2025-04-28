@@ -1,4 +1,6 @@
+// --- Footer.tsx ---
 import React from 'react';
+import { Link as ScrollLink } from 'react-scroll';
 import { PhoneIcon, MailIcon, MapPinIcon, InstagramIcon, FacebookIcon } from 'lucide-react';
 import useStrapi from '../hooks/useStrapi';
 
@@ -26,16 +28,14 @@ interface FooterSettingsResponse {
 }
 
 export const Footer: React.FC = () => {
-  // Lekérjük a Footer Settings adatokat az adott URL-ről
   const { data, loading, error } = useStrapi<FooterSettingsResponse>('/api/footer-setting?populate=*');
+  
 
   // if (loading) return <div>Footer betöltése...</div>;
   // if (error) return <div>Hiba történt: {error.message}</div>;
 
-  // Mivel a JSON szerkezeted így néz ki, a footer adatokat közvetlenül a data objektumból olvassuk ki
   const footer = data?.data;
 
-  // Ha valamelyik mező nem érkezik meg, fallback értékek kerülnek alkalmazásra
   const CompanyName = footer?.CompanyName || 'Lazars Szépségszalon';
   const Tagline = footer?.Tagline || 'Professzionális hajápolás és körömszolgáltatások egy helyen. Szépség és stílus, ahogy te szeretnéd.';
   const Address = footer?.Address || '1065 Budapest, Példa utca 123.';
@@ -59,7 +59,7 @@ export const Footer: React.FC = () => {
             <p className="text-gray-300 mb-6">{Tagline}</p>
             <div className="flex space-x-4">
               <a
-                href={SocialLinks.find(link => link.Platform.toLowerCase() === 'facebook')?.URL || 'https://facebook.com'}
+                href={SocialLinks.find(link => link.Platform.toLowerCase() === 'facebook')?.URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-colors"
@@ -67,86 +67,101 @@ export const Footer: React.FC = () => {
                 <FacebookIcon size={20} />
               </a>
               <a
-                href={SocialLinks.find(link => link.Platform.toLowerCase() === 'instagram')?.URL || 'https://instagram.com'}
+                href={SocialLinks.find(link => link.Platform.toLowerCase() === 'instagram')?.URL}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-colors"
               >
                 <InstagramIcon size={20} />
               </a>
             </div>
           </div>
-          {/* Quick Links */}
+
+          {/* Gyors linkek */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Gyors linkek</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#services" className="text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="fooldal" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                  Főoldal
+                </ScrollLink>
+              </li>
+              <li>
+                <ScrollLink to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Szolgáltatások
-                </a>
+                </ScrollLink>
               </li>
               <li>
-                <a href="#about" className="text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="rolunk" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Rólunk
-                </a>
+                </ScrollLink>
               </li>
               <li>
-                <a href="#team" className="text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="csapatunk" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Csapatunk
-                </a>
+                </ScrollLink>
               </li>
               <li>
-                <a href="#reviews" className="text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="ertekelesek" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Értékelések
-                </a>
+                </ScrollLink>
               </li>
               <li>
-                <a href="#faq" className="text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="instagram" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                  Instagram
+                </ScrollLink>
+              </li>
+              <li>
+                <ScrollLink to="gyik" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   GYIK
-                </a>
+                </ScrollLink>
               </li>
               <li>
-                <a href="#booking" className="text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="idopontfoglalas" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Időpontfoglalás
-                </a>
+                </ScrollLink>
               </li>
             </ul>
           </div>
-          {/* Services */}
+
+          {/* Szolgáltatások */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Szolgáltatások</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#services" className="text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Hajvágás és styling
-                </a>
+                </ScrollLink>
               </li>
               <li>
-                <a href="#services" className="text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Hajfestés
-                </a>
+                </ScrollLink>
               </li>
               <li>
-                <a href="#services" className="text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Hajkezelések
-                </a>
+                </ScrollLink>
               </li>
               <li>
-                <a href="#services" className="text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Manikűr és pedikűr
-                </a>
+                </ScrollLink>
               </li>
               <li>
-                <a href="#services" className="text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Géllakk
-                </a>
+                </ScrollLink>
               </li>
               <li>
-                <a href="#services" className="text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Műköröm
-                </a>
+                </ScrollLink>
               </li>
             </ul>
           </div>
-          {/* Contact */}
+
+          {/* Kapcsolat */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Kapcsolat</h3>
             <ul className="space-y-4">
@@ -156,19 +171,16 @@ export const Footer: React.FC = () => {
               </li>
               <li className="flex items-center gap-3">
                 <PhoneIcon size={20} className="text-white/70 flex-shrink-0" />
-                <a href={`tel:${Phone}`} className="text-gray-300 hover:text-white transition-colors">
-                  {Phone}
-                </a>
+                <a href={`tel:${Phone}`} className="text-gray-300 hover:text-white transition-colors">{Phone}</a>
               </li>
               <li className="flex items-center gap-3">
                 <MailIcon size={20} className="text-white/70 flex-shrink-0" />
-                <a href={`mailto:${Email}`} className="text-gray-300 hover:text-white transition-colors">
-                  {Email}
-                </a>
+                <a href={`mailto:${Email}`} className="text-gray-300 hover:text-white transition-colors">{Email}</a>
               </li>
             </ul>
           </div>
         </div>
+
         <div className="border-t border-white/10 mt-12 pt-8 text-center text-gray-400 text-sm">
           <p>{Copyright}</p>
         </div>
@@ -176,3 +188,5 @@ export const Footer: React.FC = () => {
     </footer>
   );
 };
+
+export default Footer;
