@@ -125,7 +125,7 @@ export const AboutSection: React.FC = () => {
                   to="booking"
                   smooth={true}
                   duration={800}
-                  className="inline-flex items-center gap-2 bg-[#1D1D1E] text-white px-6 py-3 rounded-lg hover:bg-black transition-colors duration-300"
+                  className="inline-flex items-center gap-2 bg-[#1D1D1E] text-white px-6 py-3 rounded-lg hover:bg-black transition-colors duration-300 cursor-pointer group"
                 >
                   <span>Időpontfoglalás</span>
                   <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />

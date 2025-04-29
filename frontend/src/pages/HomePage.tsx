@@ -14,23 +14,23 @@ import { BookingSection } from '../components/BookingSection';
 export const HomePage: React.FC = () => {
   return (
     <main>
-      <Element name="fooldal" id="fooldal">
+      <Element name="fooldal" id="home">
         <HeroSection />
       </Element>
 
-      <Element name="szolgaltatasok" id="szolgaltatasok">
+      <Element name="szolgaltatasok" id="services">
         <ServiceCards />
       </Element>
 
-      <Element name="rolunk" id="rolunk">
+      <Element name="rolunk" id="about">
         <AboutSection />
       </Element>
 
-      <Element name="csapatunk" id="csapatunk">
+      <Element name="csapatunk" id="team">
         <TeamSection />
       </Element>
 
-      <Element name="ertekelesek" id="ertekelesek">
+      <Element name="ertekelesek" id="reviews">
         <ReviewsSection />
       </Element>
 
@@ -40,11 +40,11 @@ export const HomePage: React.FC = () => {
         <InstagramFeed />
       </Element>
 
-      <Element name="gyik" id="gyik">
+      <Element name="gyik" id="faq">
         <FAQSection />
       </Element>
 
-      <Element name="idopontfoglalas" id="idopontfoglalas">
+      <Element name="idopontfoglalas" id="booking">
         <BookingSection />
       </Element>
     </main>

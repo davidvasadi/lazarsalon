@@ -82,42 +82,42 @@ export const Footer: React.FC = () => {
             <h3 className="text-lg font-semibold mb-4">Gyors linkek</h3>
             <ul className="space-y-2">
               <li>
-                <ScrollLink to="fooldal" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink href='/fooldal' to="fooldal" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Főoldal
                 </ScrollLink>
               </li>
               <li>
-                <ScrollLink to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink href='/szolgaltatasok' to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Szolgáltatások
                 </ScrollLink>
               </li>
               <li>
-                <ScrollLink to="rolunk" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink href='/rolunk' to="rolunk" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Rólunk
                 </ScrollLink>
               </li>
               <li>
-                <ScrollLink to="csapatunk" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink href='/csapatunk' to="csapatunk" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Csapatunk
                 </ScrollLink>
               </li>
               <li>
-                <ScrollLink to="ertekelesek" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink href='/ertekelesek' to="ertekelesek" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Értékelések
                 </ScrollLink>
               </li>
               <li>
-                <ScrollLink to="instagram" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink href='/instagram' to="instagram" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Instagram
                 </ScrollLink>
               </li>
               <li>
-                <ScrollLink to="gyik" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink href='/gyik' to="gyik" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   GYIK
                 </ScrollLink>
               </li>
               <li>
-                <ScrollLink to="idopontfoglalas" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink href='/idopontfoglalas' to="idopontfoglalas" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Időpontfoglalás
                 </ScrollLink>
               </li>
@@ -129,32 +129,32 @@ export const Footer: React.FC = () => {
             <h3 className="text-lg font-semibold mb-4">Szolgáltatások</h3>
             <ul className="space-y-2">
               <li>
-                <ScrollLink to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink href='/szolgaltatasok' to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Hajvágás és styling
                 </ScrollLink>
               </li>
               <li>
-                <ScrollLink to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink href='/szolgaltatasok' to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Hajfestés
                 </ScrollLink>
               </li>
               <li>
-                <ScrollLink to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink href='/szolgaltatasok' to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Hajkezelések
                 </ScrollLink>
               </li>
               <li>
-                <ScrollLink to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink href='/szolgaltatasok' to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Manikűr és pedikűr
                 </ScrollLink>
               </li>
               <li>
-                <ScrollLink to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink href='/szolgaltatasok' to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Géllakk
                 </ScrollLink>
               </li>
               <li>
-                <ScrollLink to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink href='/szolgaltatasok' to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Műköröm
                 </ScrollLink>
               </li>
