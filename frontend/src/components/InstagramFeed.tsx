@@ -1,4 +1,3 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import { InstagramIcon, ArrowUpRight } from 'lucide-react';
 export const InstagramFeed = () => {
@@ -92,7 +91,7 @@ export const InstagramFeed = () => {
                   </div>
                 </div>
               </div>
-              <a href="https://instagram.com/lazarsszepsegszalon" target="_blank" rel="noopener noreferrer" className="absolute inset-0 z-20">
+              <a href="https://www.instagram.com/lazarssalon/" target="_blank" rel="noopener noreferrer" className="absolute inset-0 z-20">
                 <span className="sr-only">Nézd meg Instagramon</span>
               </a>
             </motion.div>)}
@@ -107,7 +106,7 @@ export const InstagramFeed = () => {
         duration: 0.8,
         delay: 0.6
       }}>
-          <a href="https://instagram.com/lazarsszepsegszalon" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[#1D1D1E] hover:text-[#B4943E] transition-colors group font-light">
+          <a href="https://www.instagram.com/lazarssalon/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[#1D1D1E] hover:text-[#B4943E] transition-colors group font-light">
             <span className="text-base tracking-wide">
               @lazarsszepsegszalon
             </span>

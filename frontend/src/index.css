@@ -1,3 +1,8 @@
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
+
+.custom-pagination .swiper-pagination-bullet-active {
+    /* aktív állapotban legyen 100% fekete */
+    background-color: #000;
+  }

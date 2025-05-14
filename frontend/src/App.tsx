@@ -3,6 +3,7 @@ import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { HomePage } from './pages/HomePage';
 import { BackToTop } from './components/BackToTop';
+import { Privacy } from './pages/Privacy';
 export function App() {
   return (
     <Router
@@ -15,6 +16,7 @@ export function App() {
         <Header />
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/privacy" element={<Privacy />} />
         </Routes>
         <BackToTop />
         <Footer />

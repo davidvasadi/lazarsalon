@@ -14,37 +14,37 @@ import { BookingSection } from '../components/BookingSection';
 export const HomePage: React.FC = () => {
   return (
     <main>
-      <Element name="fooldal" id="home">
+      <Element name="" id="home">
         <HeroSection />
       </Element>
 
-      <Element name="szolgaltatasok" id="services">
+      <Element name="" id="services">
         <ServiceCards />
       </Element>
 
-      <Element name="rolunk" id="about">
+      <Element name="" id="about">
         <AboutSection />
       </Element>
 
-      <Element name="csapatunk" id="team">
+      <Element name="" id="team">
         <TeamSection />
       </Element>
 
-      <Element name="ertekelesek" id="reviews">
+      <Element name="" id="reviews">
         <ReviewsSection />
       </Element>
 
       {/* <BlogSection /> */}
 
-      <Element name="instagram" id="instagram">
+      <Element name="" id="instagram">
         <InstagramFeed />
       </Element>
 
-      <Element name="gyik" id="faq">
+      <Element name="" id="faq">
         <FAQSection />
       </Element>
 
-      <Element name="idopontfoglalas" id="booking">
+      <Element name="" id="booking">
         <BookingSection />
       </Element>
     </main>
