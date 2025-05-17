@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-scroll';
-import { Clock, ArrowRight } from 'lucide-react';
+import { Clock, ArrowRight, Phone} from 'lucide-react'; 
 import useStrapi from '../hooks/useStrapi';
 
 // ---------------------------------------------------------------------------
@@ -24,6 +24,10 @@ interface ServiceContent {
   Image: { [key: string]: any }[];
   ServiceCard?: ServiceItem[];
   groups?: ServiceGroup[];
+
+  // ↓ Ezeket add hozzá a meglévőhez:
+  ctaType: 'booking' | 'contact';
+  phoneNumber?: string;
 }
 
 interface ServiceResponse {
@@ -44,7 +48,7 @@ export const ServiceCards: React.FC = () => {
 
   const services = servicesData?.data || [];
   const baseUrl  = import.meta.env.VITE_API_URL || 'http://localhost:1337';
-
+  
   return (
     <section className="py-32 bg-gradient-to-b from-white to-gray-50">
       <div className="container mx-auto px-4">
@@ -85,6 +89,9 @@ export const ServiceCards: React.FC = () => {
               service.Image?.[0]?.url
                 ? `${baseUrl}${service.Image[0].url}`
                 : '';
+
+            // ← Döntés: booking vagy contact?
+            const isContact = service.ctaType === 'contact' && !!service.phoneNumber;
 
             return (
               <motion.div
@@ -134,18 +141,32 @@ export const ServiceCards: React.FC = () => {
                     ))}
                   </div>
 
-                  <Link
-                    to="booking"
-                    smooth={true}
-                    duration={800}
-                    className="mt-auto flex items-center justify-center gap-2 w-full bg-[#1D1D1E] text-white py-4 rounded-lg hover:bg-black transition-colors group/button cursor-pointer"
-                  >
-                    <span>Időpontfoglalás</span>
-                    <ArrowRight
-                      size={18}
-                      className="transition-transform duration-300 group-hover/button:translate-x-1"
-                    />
-                  </Link>
+                  {/* ← IDE jön a conditional CTA */}
+                  {isContact ? (
+                    <a
+                      href={`tel:${service.phoneNumber}`}
+                      className="mt-auto flex items-center justify-center gap-2 w-full bg-[#1D1D1E] text-white py-4 rounded-lg transition-transform duration-300 group/button hover:scale-105 cursor-pointer"
+                    >
+                      <span>Kapcsolatfelvétel</span>
+                      <Phone
+                        size={18}
+                        className="transform transition-transform duration-300 group-hover:rotate-12"
+                      />
+                    </a>
+                  ) : (
+                    <Link
+                      to="booking"
+                      smooth={true}
+                      duration={800}
+                      className="mt-auto flex items-center justify-center gap-2 w-full bg-[#1D1D1E] text-white py-4 rounded-lg hover:bg-black transition-colors group/button cursor-pointer"
+                    >
+                      <span>Időpontfoglalás</span>
+                      <ArrowRight
+                        size={18}
+                        className="transition-transform duration-300 group-hover/button:translate-x-1"
+                      />
+                    </Link>
+                  )}
                 </div>
               </motion.div>
             );

@@ -1,0 +1,39 @@
+{
+    "kind": "singleType",
+    "collectionName": "footer_settings",
+    "info": {
+        "singularName": "footer-setting",
+        "pluralName": "footer-settings",
+        "displayName": "Footer Setting",
+        "description": ""
+    },
+    "options": {
+        "draftAndPublish": true
+    },
+    "attributes": {
+        "CompanyName": {
+            "type": "string"
+        },
+        "Tagline": {
+            "type": "string"
+        },
+        "Address": {
+            "type": "string"
+        },
+        "Phone": {
+            "type": "string"
+        },
+        "Email": {
+            "type": "string"
+        },
+        "SocialLinks": {
+            "displayName": "SocialLinks",
+            "type": "component",
+            "repeatable": true,
+            "component": "footer-setting.social-links"
+        },
+        "Copyright": {
+            "type": "string"
+        }
+    }
+}

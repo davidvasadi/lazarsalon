@@ -11,3 +11,4 @@ backend/.env*
 
 # Egyebek
 .DS_Store
+sitemap.xml

@@ -1,0 +1,18 @@
+{
+    "collectionName": "components_services_service_items",
+    "info": {
+        "displayName": "Service Item"
+    },
+    "options": {},
+    "attributes": {
+        "Name": {
+            "type": "string"
+        },
+        "Duration": {
+            "type": "string"
+        },
+        "Price": {
+            "type": "string"
+        }
+    }
+}

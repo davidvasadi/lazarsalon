@@ -1,0 +1,12 @@
+{
+    "collectionName": "components_booking_booking_cards",
+    "info": {
+        "displayName": "BookingCard"
+    },
+    "options": {},
+    "attributes": {
+        "BookingFeature": {
+            "type": "string"
+        }
+    }
+}

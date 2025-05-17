@@ -1,0 +1,46 @@
+{
+    "kind": "singleType",
+    "collectionName": "abouts",
+    "info": {
+        "singularName": "about",
+        "pluralName": "abouts",
+        "displayName": "About Section",
+        "description": "Write about yourself and the content you create"
+    },
+    "options": {
+        "draftAndPublish": false
+    },
+    "pluginOptions": {},
+    "attributes": {
+        "Title": {
+            "type": "string"
+        },
+        "Description": {
+            "type": "string"
+        },
+        "Image": {
+            "type": "media",
+            "multiple": true,
+            "required": false,
+            "allowedTypes": [
+                "images",
+                "files",
+                "videos",
+                "audios"
+            ]
+        },
+        "AboutService": {
+            "type": "component",
+            "repeatable": true,
+            "component": "about-service-item.about-service-item"
+        },
+        "Introdution": {
+            "type": "text"
+        },
+        "openingHours": {
+            "type": "component",
+            "repeatable": true,
+            "component": "opening-hours.opening-hours"
+        }
+    }
+}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScissorsIcon, Scissors } from 'lucide-react';
+import { ScissorsIcon, Scissors, Phone } from 'lucide-react';
 import useStrapi from '../hooks/useStrapi';
 import { motion } from 'framer-motion';
 
@@ -61,6 +61,8 @@ interface BookingCardItem {
   Link: string;
   Image?: BookingImageData;
   BookingCard?: BookingFeature[]; // A mező neve BookingCard, benne BookingFeature mezők
+  ctaType: 'booking' | 'contact';
+  phoneNumber?: string;
 }
 
 interface BookingCardResponse {
@@ -84,37 +86,22 @@ export const BookingSection: React.FC = () => {
     {
       id: 1,
       Title: 'Fodrászat',
-      Description: 'Professzionális hajvágás, festés és styling szolgáltatások',
-      Link: 'https://hair.lazarsszepsegszalon.hu',
-      Image: {
-        data: {
-          attributes: {
-            url:
-              'https://images.unsplash.com/photo-1560066984-138dadb4c035?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80'
-          }
-        }
-      },
-      BookingCard: [
-        { id: 1, BookingFeature: 'Hajfestés' },
-        { id: 2, BookingFeature: 'Hajvágás' }
-      ]
+      Description: 'Szolgáltatás leírása',
+      Link: '/booking/fodraszat',
+      Image: { data: { attributes: { url: defaultImage } } },
+      BookingCard: [],
+      ctaType: 'booking',
+      phoneNumber: '123456789'
     },
     {
       id: 2,
       Title: 'Körömszalon',
-      Description: 'Manikűr, pedikűr és műköröm szolgáltatások',
-      Link: 'https://nails.lazarsszepsegszalon.hu',
-      Image: {
-        data: {
-          attributes: {
-            url: '/assets/images/mukorom-szolgaltasasok.jpg'
-          }
-        }
-      },
-      BookingCard: [
-        { id: 3, BookingFeature: 'Manikűr' },
-        { id: 4, BookingFeature: 'Pedikűr' }
-      ]
+      Description: 'Szolgáltatás leírása',
+      Link: '/booking/kormok',
+      Image: { data: { attributes: { url: defaultImage } } },
+      BookingCard: [],
+      ctaType: 'booking',
+      phoneNumber: '987654321'
     }
   ];
 
@@ -178,6 +165,7 @@ export const BookingSection: React.FC = () => {
         </div>
         <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {services.map((service, index) => {
+            const isContact = service.ctaType === 'contact' && !!service.phoneNumber;
             const imageUrl = getImageUrl(service);
             const features = getFeatures(service);
             const icon = getIcon(service.Title);
@@ -211,7 +199,7 @@ export const BookingSection: React.FC = () => {
                         ))}
                     </ul>
                   </div>
-                  <a
+                  {/* <a
                     href={service.Link}
                     
                     className="bg-white/10 backdrop-blur-sm border border-white/20 text-white px-6 py-3 rounded-lg font-light inline-flex items-center justify-center gap-2 hover:bg-white hover:text-[#1D1D1E] transition-all duration-300 group-hover:scale-[1.02]"
@@ -220,7 +208,24 @@ export const BookingSection: React.FC = () => {
                     <span className="w-0 group-hover:w-6 overflow-hidden transition-all duration-300 ease-in-out">
                       →
                     </span>
+                  </a> */}
+                  {isContact ? (
+                    <a
+                    href={`tel:${service.phoneNumber}`}
+                    className="group mt-4 flex items-center justify-center gap-2 w-full bg-[#1D1D1E] text-white py-4 rounded-lg transition-transform duration-300 hover:scale-105 cursor-pointer"
+                       >
+                        <span>Kapcsolatfelvétel</span>
+                        <Phone size={18} className="transform transition-transform duration-300 group-hover:rotate-12" />
                   </a>
+                  ) : (
+                    <a
+                      href={service.Link}
+                      className="mt-4 flex items-center justify-center gap-2 w-full bg-[#1D1D1E] text-white py-4 rounded-lg hover:bg-black transition-colors cursor-pointer"
+                      >
+                       <span>Időpontfoglalás</span>
+                       <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+                      </a> 
+                  )}
                 </div>
               </div>
             );
