@@ -4,7 +4,8 @@
   "info": {
     "singularName": "service-card",
     "pluralName": "service-cards",
-    "displayName": "Service Card"
+    "displayName": "Service Card",
+    "description": ""
   },
   "options": {
     "draftAndPublish": true
@@ -14,19 +15,30 @@
       "type": "string"
     },
     "Image": {
+      "type": "media",
+      "multiple": true,
+      "required": false,
       "allowedTypes": [
         "images",
         "files",
         "videos",
         "audios"
-      ],
-      "type": "media",
-      "multiple": true
+      ]
     },
     "ServiceCard": {
       "type": "component",
       "repeatable": true,
       "component": "services.service-item"
+    },
+    "ctaType": {
+      "type": "enumeration",
+      "enum": [
+        "booking",
+        "contact"
+      ]
+    },
+    "phoneNumber": {
+      "type": "string"
     }
   }
 }

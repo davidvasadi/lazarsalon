@@ -4,7 +4,8 @@
   "info": {
     "singularName": "booking-card",
     "pluralName": "booking-cards",
-    "displayName": "Booking Card"
+    "displayName": "Booking Card",
+    "description": ""
   },
   "options": {
     "draftAndPublish": true
@@ -22,20 +23,31 @@
       "type": "string"
     },
     "Image": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
       "allowedTypes": [
         "images",
         "files",
         "videos",
         "audios"
-      ],
-      "type": "media",
-      "multiple": false
+      ]
     },
     "BookingCard": {
       "displayName": "BookingCard",
       "type": "component",
       "repeatable": true,
       "component": "booking.booking-card"
+    },
+    "ctaType": {
+      "type": "enumeration",
+      "enum": [
+        "booking",
+        "contact"
+      ]
+    },
+    "phoneNumber": {
+      "type": "string"
     }
   }
 }

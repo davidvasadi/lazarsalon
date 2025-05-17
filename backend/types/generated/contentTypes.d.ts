@@ -484,6 +484,7 @@ export interface ApiAuthorAuthor extends Struct.CollectionTypeSchema {
 export interface ApiBookingCardBookingCard extends Struct.CollectionTypeSchema {
   collectionName: 'booking_cards';
   info: {
+    description: '';
     displayName: 'Booking Card';
     pluralName: 'booking-cards';
     singularName: 'booking-card';
@@ -496,6 +497,7 @@ export interface ApiBookingCardBookingCard extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    ctaType: Schema.Attribute.Enumeration<['booking', 'contact']>;
     Description: Schema.Attribute.String & Schema.Attribute.Required;
     Image: Schema.Attribute.Media<'images' | 'files' | 'videos' | 'audios'>;
     Link: Schema.Attribute.String;
@@ -505,6 +507,7 @@ export interface ApiBookingCardBookingCard extends Struct.CollectionTypeSchema {
       'api::booking-card.booking-card'
     > &
       Schema.Attribute.Private;
+    phoneNumber: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
     Title: Schema.Attribute.String & Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;
@@ -707,6 +710,7 @@ export interface ApiHeroSectionHeroSection extends Struct.SingleTypeSchema {
 export interface ApiServiceCardServiceCard extends Struct.CollectionTypeSchema {
   collectionName: 'service_cards';
   info: {
+    description: '';
     displayName: 'Service Card';
     pluralName: 'service-cards';
     singularName: 'service-card';
@@ -718,6 +722,7 @@ export interface ApiServiceCardServiceCard extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    ctaType: Schema.Attribute.Enumeration<['booking', 'contact']>;
     Image: Schema.Attribute.Media<
       'images' | 'files' | 'videos' | 'audios',
       true
@@ -728,6 +733,7 @@ export interface ApiServiceCardServiceCard extends Struct.CollectionTypeSchema {
       'api::service-card.service-card'
     > &
       Schema.Attribute.Private;
+    phoneNumber: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
     ServiceCard: Schema.Attribute.Component<'services.service-item', true>;
     Title: Schema.Attribute.String;
