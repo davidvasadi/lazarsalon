@@ -7,7 +7,7 @@ export const Privacy: React.FC = () => {
       <div className="max-w-3xl mx-auto px-6 lg:px-0">
         <h1 className="text-4xl font-light text-[#1D1D1E] mb-6">Adatvédelmi tájékoztató</h1>
         <p className="text-[#38363C]/80 text-lg mb-6">
-          Ez a weboldal (<a href="https://lazarszalon.com" className="text-[#B4943E] hover:underline">https://lazarszalon.com</a>) üzemeltetője („mi", „minket")
+          Ez a weboldal (<a href="https://lazarsalon.com" className="text-[#B4943E] hover:underline">https://lazarsalon.com</a>) üzemeltetője („mi", „minket")
           elkötelezett a felhasználók adatainak védelme iránt. A Facebook Login és az Instagram Graph API
           használata során a felhasználói engedélyeken túl további személyes adatot nem gyűjtünk, és azokat nem
           tároljuk hosszabb távon.
@@ -32,14 +32,14 @@ export const Privacy: React.FC = () => {
         <h2 className="text-2xl font-semibold text-[#1D1D1E] mb-4">Hozzáférés és törlés</h2>
         <p className="text-[#38363C]/80 mb-6">
           Bármikor kérheted engedélyeid visszavonását vagy az adataid törlését az alábbi email címen:<br />
-          <a href="mailto:info@lazarszalon.com" className="text-[#B4943E] hover:underline">info@lazarszalon.com</a>
+          <a href="mailto:info@lazarsalon.com" className="text-[#B4943E] hover:underline">info@lazarsalon.com</a>
         </p>
 
         <h2 className="text-2xl font-semibold text-[#1D1D1E] mb-4">Kapcsolat</h2>
         <p className="text-[#38363C]/80 mb-12">
           Ha bármilyen kérdésed vagy észrevételed van ezzel a tájékoztatóval kapcsolatban, kérjük, írj nekünk:
           <br />
-          <a href="mailto:info@lazarszalon.com" className="text-[#B4943E] hover:underline">info@lazarszalon.com</a>
+          <a href="mailto:info@lazarsalon.com" className="text-[#B4943E] hover:underline">info@lazarsalon.com</a>
         </p>
 
         <Link
