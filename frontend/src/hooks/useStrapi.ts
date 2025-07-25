@@ -21,7 +21,7 @@ function useStrapi<T>(endpoint: string): UseStrapiReturn<T> {
 
   // Vite esetében a környezeti változókat import.meta.env-en keresztül érjük el.
   const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:1337';
-
+  
   useEffect(() => {
     const fetchData = async () => {
       try {

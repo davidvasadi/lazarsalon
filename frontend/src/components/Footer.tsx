@@ -1,7 +1,7 @@
 // --- Footer.tsx ---
 import React from 'react';
 import { Link as ScrollLink } from 'react-scroll';
-import { PhoneIcon, MailIcon, MapPinIcon, InstagramIcon, FacebookIcon } from 'lucide-react';
+import { PhoneIcon, MailIcon, MapPinIcon, InstagramIcon, FacebookIcon, Settings2Icon } from 'lucide-react';
 import useStrapi from '../hooks/useStrapi';
 
 // Típusdefiníciók a Strapi Footer Settings válaszához
@@ -29,11 +29,10 @@ interface FooterSettingsResponse {
 
 export const Footer: React.FC = () => {
   const { data, loading, error } = useStrapi<FooterSettingsResponse>('/api/footer-setting?populate=*');
-  
 
   // if (loading) return <div>Footer betöltése...</div>;
   // if (error) return <div>Hiba történt: {error.message}</div>;
-
+  
   const footer = data?.data;
 
   const CompanyName = footer?.CompanyName || 'Lazars Szépségszalon';
@@ -47,6 +46,12 @@ export const Footer: React.FC = () => {
   ];
   const Copyright = footer?.Copyright || `© ${new Date().getFullYear()} Lazars Szépségszalon. Minden jog fenntartva.`;
 
+  const handleReopenConsent = () => {
+    localStorage.removeItem('cookie_consent');
+    document.cookie = "cookie_consent=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    window.location.reload();
+  };
+
   return (
     <footer className="bg-[#1D1D1E] text-white">
       <div className="container mx-auto px-4 py-12">
@@ -57,7 +62,7 @@ export const Footer: React.FC = () => {
               <span className="text-white">{CompanyName.split(' ')[0]}</span> {CompanyName.split(' ').slice(1).join(' ')}
             </h2>
             <p className="text-gray-300 mb-6">{Tagline}</p>
-            <div className="flex space-x-4">
+            <div className="flex space-x-4 mb-4">
               <a
                 href={SocialLinks.find(link => link.Platform.toLowerCase() === 'facebook')?.URL}
                 target="_blank"
@@ -75,6 +80,14 @@ export const Footer: React.FC = () => {
                 <InstagramIcon size={20} />
               </a>
             </div>
+            {/* Cookie beállítások */}
+            <button
+              onClick={handleReopenConsent}
+              className="mt-2 inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+            >
+              <Settings2Icon size={16} />
+              Sütibeállítások módosítása
+            </button>
           </div>
 
           {/* Gyors linkek */}
@@ -82,42 +95,42 @@ export const Footer: React.FC = () => {
             <h3 className="text-lg font-semibold mb-4">Gyors linkek</h3>
             <ul className="space-y-2">
               <li>
-                <ScrollLink href='/fooldal' to="fooldal" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="home" smooth={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Főoldal
                 </ScrollLink>
               </li>
               <li>
-                <ScrollLink href='/szolgaltatasok' to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="services" smooth={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Szolgáltatások
                 </ScrollLink>
               </li>
               <li>
-                <ScrollLink href='/rolunk' to="rolunk" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="about" smooth={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Rólunk
                 </ScrollLink>
               </li>
               <li>
-                <ScrollLink href='/csapatunk' to="csapatunk" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="team" smooth={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Csapatunk
                 </ScrollLink>
               </li>
               <li>
-                <ScrollLink href='/ertekelesek' to="ertekelesek" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="reviews" smooth={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Értékelések
                 </ScrollLink>
               </li>
               <li>
-                <ScrollLink href='/instagram' to="instagram" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="instagram" smooth={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Instagram
                 </ScrollLink>
               </li>
               <li>
-                <ScrollLink href='/gyik' to="gyik" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="faq" smooth={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   GYIK
                 </ScrollLink>
               </li>
               <li>
-                <ScrollLink href='/idopontfoglalas' to="idopontfoglalas" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="booking" smooth={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Időpontfoglalás
                 </ScrollLink>
               </li>
@@ -125,36 +138,37 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Szolgáltatások */}
+
           <div>
             <h3 className="text-lg font-semibold mb-4">Szolgáltatások</h3>
             <ul className="space-y-2">
               <li>
-                <ScrollLink href='/szolgaltatasok' to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="services" smooth={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Hajvágás és styling
                 </ScrollLink>
               </li>
               <li>
-                <ScrollLink href='/szolgaltatasok' to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="services" smooth={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Hajfestés
                 </ScrollLink>
               </li>
               <li>
-                <ScrollLink href='/szolgaltatasok' to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="services" smooth={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Hajkezelések
                 </ScrollLink>
               </li>
               <li>
-                <ScrollLink href='/szolgaltatasok' to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="services" smooth={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Manikűr és pedikűr
                 </ScrollLink>
               </li>
               <li>
-                <ScrollLink href='/szolgaltatasok' to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="services" smooth={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Géllakk
                 </ScrollLink>
               </li>
               <li>
-                <ScrollLink href='/szolgaltatasok' to="szolgaltatasok" smooth={true} hashSpy={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
+                <ScrollLink to="services" smooth={true} duration={500} className="cursor-pointer text-gray-300 hover:text-white transition-colors">
                   Műköröm
                 </ScrollLink>
               </li>
@@ -162,7 +176,7 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Kapcsolat */}
-          <div>
+          <div id='contact'>
             <h3 className="text-lg font-semibold mb-4">Kapcsolat</h3>
             <ul className="space-y-4">
               <li className="flex items-start gap-3">

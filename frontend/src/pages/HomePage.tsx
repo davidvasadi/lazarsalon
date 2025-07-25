@@ -1,4 +1,3 @@
-// --- HomePage.tsx ---
 import React from 'react';
 import { Element } from 'react-scroll';
 import { HeroSection } from '../components/HeroSection';
@@ -10,7 +9,6 @@ import { ReviewsSection } from '../components/ReviewsSection';
 import { InstagramFeed } from '../components/InstagramFeed';
 import { FAQSection } from '../components/FAQSection';
 import { BookingSection } from '../components/BookingSection';
-
 export const HomePage: React.FC = () => {
   return (
     <main>
