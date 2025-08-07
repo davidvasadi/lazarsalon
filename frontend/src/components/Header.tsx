@@ -223,10 +223,10 @@ export const Header: React.FC = () => {
             transition={{ type: 'tween', duration: 0.3 }}
             className="lg:hidden fixed inset-0 z-[59] bg-white/[0.90] backdrop-blur-lg"
           >
-            <nav className="container mx-auto px-4 py-8 pt-20 flex flex-col space-y-12">
+            <nav className="container mx-auto px-4 py-8 pt-20 flex flex-col space-y-8">
               {dynamicMenuItems.length > 0 ? (
                 dynamicMenuItems.map((item, idx) => (
-                  <div key={idx} className={`space-y-2 ${idx === 0 ? 'mt-12' : ''}`}>
+                  <div key={idx} className={`space-y-2 ${idx === 0 ? 'mt-6' : ''}`}>
                     {item.submenu && item.submenu.length > 0 ? (
                       <>
                         <h3 className="text-[#B4943E] font-medium text-lg">{item.label}</h3>
@@ -258,7 +258,7 @@ export const Header: React.FC = () => {
                 ))
               ) : (
                 <>
-                  <div className="space-y-2 mt-12">
+                  <div className="space-y-2 mt-6">
                     <h3 className="text-[#B4943E] font-medium text-lg">{defaultMenuGroups.about.label}</h3>
                     {defaultMenuGroups.about.items.map(item => (
                       <Link
@@ -273,7 +273,7 @@ export const Header: React.FC = () => {
                       </Link>
                     ))}
                   </div>
-                  <div className="space-y-2">
+                  <div className="">
                     <h3 className="text-[#B4943E] font-medium text-lg">{defaultMenuGroups.services.label}</h3>
                     {defaultMenuGroups.services.items.map(item => (
                       <Link
@@ -294,7 +294,7 @@ export const Header: React.FC = () => {
                 to="booking"
                 smooth={true}
                 duration={500}
-                className="bg-[#38363C] text-white px-6 py-4 rounded-lg text-center text-lg font-medium mt-8"
+                className="bg-[#38363C] mt-4 text-white px-6 py-4 rounded-lg text-center text-lg font-medium "
                 onClick={() => setIsMenuOpen(false)}
               >
                 Időpontfoglalás
