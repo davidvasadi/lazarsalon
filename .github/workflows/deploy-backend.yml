@@ -10,6 +10,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
@@ -19,9 +20,22 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
+
+            # Safety: never deploy if uploads isn't a symlink (protects customer uploads)
+            if [ ! -L /var/www/lazarsalon/backend/public/uploads ]; then
+              echo "ERROR: /var/www/lazarsalon/backend/public/uploads is not a symlink. Aborting deploy to protect uploads."
+              exit 1
+            fi
+
             cd /var/www/lazarsalon
-            git pull origin main
+
+            # Make working tree exactly match GitHub main
+            git fetch origin main
+            git reset --hard origin/main
+
             cd backend
+
+            # Install + build + restart
             npm ci
             npm run build
             pm2 restart strapi
