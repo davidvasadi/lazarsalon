@@ -85,6 +85,7 @@ jobs:
             # --- Sync new code/build safely (never touch uploads & env) ---
             rsync -a --delete \
               --exclude 'public/uploads' \
+              --exclude '.tmp' \
               --exclude '.env' \
               --exclude '.env.*' \
               --exclude 'node_modules' \
