@@ -1,4 +1,4 @@
-name: Deploy backend to VPS
+name: Deploy backend (CI build -> VPS)
 
 on:
   push:
@@ -8,11 +8,48 @@ on:
       - ".github/workflows/deploy-backend.yml"
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy via SSH
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install & build Strapi (CI)
+        working-directory: backend
+        run: |
+          npm ci
+          npm run build
+
+      # Csökkentsük a feltöltendő méretet: node_modules ne menjen fel
+      - name: Remove node_modules before upload
+        run: |
+          rm -rf backend/node_modules
+
+      # Csomagoljuk a backend-et (uploads és .env nélkül)
+      - name: Create backend bundle
+        run: |
+          tar -czf backend_bundle.tgz \
+            --exclude='backend/public/uploads' \
+            --exclude='backend/.env' \
+            --exclude='backend/.env.*' \
+            backend
+
+      - name: Upload bundle to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "backend_bundle.tgz"
+          target: "/tmp"
+
+      - name: Deploy on VPS (extract, rsync exclude uploads, install prod deps, restart)
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -21,25 +58,43 @@ jobs:
           script: |
             set -e
 
-            # Safety: never deploy if uploads isn't a symlink (protects customer uploads)
-            if [ ! -L /var/www/lazarsalon/backend/public/uploads ]; then
-              echo "ERROR: /var/www/lazarsalon/backend/public/uploads is not a symlink. Aborting deploy to protect uploads."
-              exit 1
+            APP_ROOT="/var/www/lazarsalon"
+            BACKEND_DIR="$APP_ROOT/backend"
+            STORAGE="/var/www/lazarsalon_storage/uploads"
+            TMP_DIR="/tmp/backend_deploy_${GITHUB_SHA}"
+
+            mkdir -p "$TMP_DIR"
+            tar -xzf /tmp/backend_bundle.tgz -C "$TMP_DIR"
+            rm -f /tmp/backend_bundle.tgz
+
+            # --- Ensure uploads is safe (symlink) ---
+            mkdir -p /var/www/lazarsalon_storage
+            mkdir -p "$STORAGE"
+
+            if [ -L "$BACKEND_DIR/public/uploads" ]; then
+              echo "uploads is symlink ✅"
+            else
+              echo "uploads is NOT symlink -> fixing to protect customer uploads..."
+              if [ -d "$BACKEND_DIR/public/uploads" ]; then
+                # mentés: ha még ott van valami, ne vesszen el
+                mv "$BACKEND_DIR/public/uploads" "/var/www/lazarsalon_storage/uploads_bak_$(date +%F_%H%M%S)"
+              fi
+              ln -s "$STORAGE" "$BACKEND_DIR/public/uploads"
             fi
 
-            cd /var/www/lazarsalon
+            # --- Sync new code/build safely (never touch uploads & env) ---
+            rsync -a --delete \
+              --exclude 'public/uploads' \
+              --exclude '.env' \
+              --exclude '.env.*' \
+              --exclude 'node_modules' \
+              "$TMP_DIR/backend/" "$BACKEND_DIR/"
 
-            # Make working tree exactly match GitHub main
-            git fetch origin main
-            git reset --hard origin/main
+            rm -rf "$TMP_DIR"
 
-            cd backend
+            # --- Install only production deps on VPS ---
+            cd "$BACKEND_DIR"
+            npm ci --omit=dev
 
-            # Install dependencies
-            npm ci
-
-            # Strapi admin build can OOM on small VPS -> give Node more heap
-            NODE_OPTIONS="--max-old-space-size=1536" npm run build
-
-            # Restart Strapi
+            # --- Restart Strapi ---
             pm2 restart strapi
