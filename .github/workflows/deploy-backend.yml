@@ -35,7 +35,11 @@ jobs:
 
             cd backend
 
-            # Install + build + restart
+            # Install dependencies
             npm ci
-            npm run build
+
+            # Strapi admin build can OOM on small VPS -> give Node more heap
+            NODE_OPTIONS="--max-old-space-size=1536" npm run build
+
+            # Restart Strapi
             pm2 restart strapi
