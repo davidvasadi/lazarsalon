@@ -19,14 +19,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Install & build (Vite)
         working-directory: frontend
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
         run: |
-          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+          npm ci
           npm run build
 
-      # 1) Feltöltjük a buildet egy TEMP mappába (nem public_html-ba közvetlenül)
+      # 1) Upload dist -> TEMP (nem public_html-ba közvetlenül)
       - name: Upload dist to temp folder on cPanel
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -34,12 +38,12 @@ jobs:
           username: ${{ secrets.CPANEL_USER }}
           password: ${{ secrets.CPANEL_PASSWORD }}
           port: ${{ secrets.CPANEL_PORT }}
-          source: "frontend/dist/*"
+          source: "frontend/dist/**"
           target: "/home/${{ secrets.CPANEL_USER }}/tmp/frontend_deploy"
           strip_components: 2
           overwrite: true
 
-      # 2) Szerveren cseréljük a frontend fájlokat úgy, hogy a .env és az api/ megmaradjon
+      # 2) Aktiválás: build fájlok cseréje úgy, hogy api/ és .env megmaradjon
       - name: Activate new frontend build (safe replace)
         uses: appleboy/ssh-action@v1
         with:
@@ -48,15 +52,26 @@ jobs:
           password: ${{ secrets.CPANEL_PASSWORD }}
           port: ${{ secrets.CPANEL_PORT }}
           script: |
-            set -e
-            TARGET="${{ secrets.CPANEL_TARGET_DIR }}"
-            TMP="/home/${{ secrets.CPANEL_USER }}/tmp/frontend_deploy"
+            set -euo pipefail
 
-            # csak a frontend build tipikus elemeit cseréljük:
+            TARGET="${{ secrets.CPANEL_TARGET_DIR }}"
+            USER="${{ secrets.CPANEL_USER }}"
+            TMP="/home/${USER}/tmp/frontend_deploy"
+
+            if [ ! -d "$TMP" ]; then
+              echo "ERROR: temp deploy folder not found: $TMP"
+              exit 1
+            fi
+
             cd "$TARGET"
+
+            # tipikus Vite build mappák törlése, a többi (api/, .env, stb) marad
             rm -rf assets icons
-            # index.html és a többi build file felülírható, de az api/ és .env marad
-            cp -a "$TMP/"* "$TARGET/"
+
+            # index.html + minden build artifact frissítése (rejtett fájlokat is kezeli)
+            cp -a "$TMP/." "$TARGET/"
 
             # takarítás
             rm -rf "$TMP"
+
+            echo "✅ Frontend deployed to: $TARGET"
