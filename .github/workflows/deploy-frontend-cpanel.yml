@@ -1,0 +1,62 @@
+name: Deploy frontend to cPanel
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/deploy-frontend-cpanel.yml"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install & build (Vite)
+        working-directory: frontend
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+          npm run build
+
+      # 1) Feltöltjük a buildet egy TEMP mappába (nem public_html-ba közvetlenül)
+      - name: Upload dist to temp folder on cPanel
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.CPANEL_HOST }}
+          username: ${{ secrets.CPANEL_USER }}
+          password: ${{ secrets.CPANEL_PASSWORD }}
+          port: ${{ secrets.CPANEL_PORT }}
+          source: "frontend/dist/*"
+          target: "/home/${{ secrets.CPANEL_USER }}/tmp/frontend_deploy"
+          strip_components: 2
+          overwrite: true
+
+      # 2) Szerveren cseréljük a frontend fájlokat úgy, hogy a .env és az api/ megmaradjon
+      - name: Activate new frontend build (safe replace)
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.CPANEL_HOST }}
+          username: ${{ secrets.CPANEL_USER }}
+          password: ${{ secrets.CPANEL_PASSWORD }}
+          port: ${{ secrets.CPANEL_PORT }}
+          script: |
+            set -e
+            TARGET="${{ secrets.CPANEL_TARGET_DIR }}"
+            TMP="/home/${{ secrets.CPANEL_USER }}/tmp/frontend_deploy"
+
+            # csak a frontend build tipikus elemeit cseréljük:
+            cd "$TARGET"
+            rm -rf assets icons
+            # index.html és a többi build file felülírható, de az api/ és .env marad
+            cp -a "$TMP/"* "$TARGET/"
+
+            # takarítás
+            rm -rf "$TMP"
