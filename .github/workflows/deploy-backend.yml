@@ -26,119 +26,73 @@ jobs:
           npm ci
           npm run build
 
-      # Csökkentsük a feltöltendő méretet: node_modules ne menjen fel
-      - name: Remove node_modules before upload
+      - name: Create backend bundle (exclude uploads/env/tmp)
         run: |
           rm -rf backend/node_modules
-
-      # Csomagoljuk a backend-et (uploads és .env nélkül)
-      - name: Create backend bundle
-        run: |
           tar -czf backend_bundle.tgz \
             --exclude='backend/public/uploads' \
             --exclude='backend/.env' \
             --exclude='backend/.env.*' \
+            --exclude='backend/.tmp' \
+            --exclude='backend/node_modules' \
             backend
 
-      # --- QUICK SSH CHECK (ha itt EOF, akkor kulcs/port/ban, nem Strapi) ---
-      - name: SSH sanity check
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          script: |
-            whoami
-            hostname
-            uptime
+      - name: Upload bundle to VPS via rsync
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rsync
 
-      - name: Upload bundle to VPS
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          source: "backend_bundle.tgz"
-          target: "/tmp"
-          debug: true
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > key.pem
+          chmod 600 key.pem
 
-      - name: Deploy on VPS (extract, rsync exclude uploads & db, install prod deps, restart)
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          script: |
-            set -euo pipefail
+          rsync -avz --progress \
+            -e "ssh -i key.pem -p 22 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
+            backend_bundle.tgz \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/backend_bundle.tgz
 
-            APP_ROOT="/var/www/lazarsalon"
-            BACKEND_DIR="$APP_ROOT/backend"
-            STORAGE_ROOT="/var/www/lazarsalon_storage"
-            UPLOADS_TARGET="$STORAGE_ROOT/uploads"
-            DB_TARGET="$STORAGE_ROOT/db/data.db"
-            DB_LINK="$BACKEND_DIR/.tmp/data.db"
-            TMP_DIR="/tmp/backend_deploy_${GITHUB_SHA}"
+      - name: Deploy on VPS (safe rsync + prod deps + pm2 restart)
+        shell: bash
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > key.pem
+          chmod 600 key.pem
 
-            echo "== Preflight dirs =="
-            mkdir -p "$TMP_DIR"
-            mkdir -p "$STORAGE_ROOT/db"
-            mkdir -p "$UPLOADS_TARGET"
-            mkdir -p "$BACKEND_DIR/.tmp"
-            mkdir -p "$BACKEND_DIR/public"
+          ssh -i key.pem -p 22 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "set -euo pipefail \
+            && APP_ROOT='/var/www/lazarsalon' \
+            && BACKEND_DIR=\"\$APP_ROOT/backend\" \
+            && STORAGE_UPLOADS='/var/www/lazarsalon_storage/uploads' \
+            && STORAGE_DB='/var/www/lazarsalon_storage/db' \
+            && TMP_DIR='/tmp/backend_deploy_${GITHUB_SHA}' \
+            && mkdir -p \"\$TMP_DIR\" \
+            && tar -xzf /tmp/backend_bundle.tgz -C \"\$TMP_DIR\" \
+            && rm -f /tmp/backend_bundle.tgz \
+            && mkdir -p /var/www/lazarsalon_storage \"\$STORAGE_UPLOADS\" \"\$STORAGE_DB\" \
+            && mkdir -p \"\$BACKEND_DIR/public\" \"\$BACKEND_DIR/.tmp\" \
+            && if [ ! -L \"\$BACKEND_DIR/public/uploads\" ]; then \
+                 if [ -d \"\$BACKEND_DIR/public/uploads\" ]; then \
+                   mv \"\$BACKEND_DIR/public/uploads\" \"/var/www/lazarsalon_storage/uploads_bak_\$(date +%F_%H%M%S)\"; \
+                 fi; \
+                 ln -s \"\$STORAGE_UPLOADS\" \"\$BACKEND_DIR/public/uploads\"; \
+               fi \
+            && if [ ! -L \"\$BACKEND_DIR/.tmp/data.db\" ]; then \
+                 if [ -f \"\$BACKEND_DIR/.tmp/data.db\" ]; then \
+                   mv \"\$BACKEND_DIR/.tmp/data.db\" \"/var/www/lazarsalon_storage/db/data.db_bak_\$(date +%F_%H%M%S)\"; \
+                 fi; \
+                 if [ -f \"\$STORAGE_DB/data.db\" ]; then \
+                   ln -s \"\$STORAGE_DB/data.db\" \"\$BACKEND_DIR/.tmp/data.db\"; \
+                 fi; \
+               fi \
+            && rsync -a --delete \
+                 --exclude 'public/uploads' \
+                 --exclude '.tmp' \
+                 --exclude '.env' \
+                 --exclude '.env.*' \
+                 --exclude 'node_modules' \
+                 \"\$TMP_DIR/backend/\" \"\$BACKEND_DIR/\" \
+            && rm -rf \"\$TMP_DIR\" \
+            && cd \"\$BACKEND_DIR\" \
+            && npm ci --omit=dev \
+            && pm2 restart strapi"
 
-            echo "== Extract bundle =="
-            tar -xzf /tmp/backend_bundle.tgz -C "$TMP_DIR"
-            rm -f /tmp/backend_bundle.tgz
-
-            echo "== Ensure uploads is symlink =="
-            if [ -L "$BACKEND_DIR/public/uploads" ]; then
-              echo "uploads is symlink ✅"
-            else
-              echo "uploads is NOT symlink -> fixing..."
-              if [ -d "$BACKEND_DIR/public/uploads" ]; then
-                mv "$BACKEND_DIR/public/uploads" "$STORAGE_ROOT/uploads_bak_$(date +%F_%H%M%S)"
-              fi
-              ln -s "$UPLOADS_TARGET" "$BACKEND_DIR/public/uploads"
-            fi
-
-            echo "== Ensure DB is symlink =="
-            # DB snapshot deploy előtt (ha létezik)
-            if [ -f "$DB_TARGET" ]; then
-              cp -a "$DB_TARGET" "$STORAGE_ROOT/db/data.db.predeploy_$(date +%F_%H%M%S)"
-              echo "DB snapshot created ✅"
-            else
-              echo "WARN: DB target not found at $DB_TARGET"
-            fi
-
-            if [ -L "$DB_LINK" ]; then
-              echo "DB link is symlink ✅"
-            else
-              echo "DB link is NOT symlink -> fixing..."
-              if [ -f "$DB_LINK" ]; then
-                mv "$DB_LINK" "$STORAGE_ROOT/db/data.db_linkfile_bak_$(date +%F_%H%M%S)"
-              fi
-              ln -s "$DB_TARGET" "$DB_LINK"
-              chown -h www-data:www-data "$DB_LINK" || true
-            fi
-
-            echo "== Rsync code (never touch uploads/.env/.tmp/node_modules) =="
-            rsync -a --delete \
-              --exclude 'public/uploads' \
-              --exclude '.tmp' \
-              --exclude '.env' \
-              --exclude '.env.*' \
-              --exclude 'node_modules' \
-              "$TMP_DIR/backend/" "$BACKEND_DIR/"
-
-            rm -rf "$TMP_DIR"
-
-            echo "== Install prod deps =="
-            cd "$BACKEND_DIR"
-            npm ci --omit=dev
-
-            echo "== Restart Strapi =="
-            pm2 restart strapi
-            pm2 status
