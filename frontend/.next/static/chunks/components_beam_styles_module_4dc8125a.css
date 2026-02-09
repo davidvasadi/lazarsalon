@@ -1,0 +1,35 @@
+/* [project]/components/beam/styles.module.css [app-client] (css) */
+.styles-module__53QrJa__meteor {
+  animation: 3s linear styles-module__53QrJa__meteor;
+  animation-delay: var(--meteor-delay, 0s);
+  animation-duration: var(--meteor-duration, 2s);
+  transform: rotate(-180deg);
+}
+
+.styles-module__53QrJa__meteor:before {
+  content: "";
+  width: var(--meteor-width, 50px);
+  background: linear-gradient(90deg, var(--cyan-500), var(--blue-500), transparent);
+  height: 1px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+@keyframes styles-module__53QrJa__meteor {
+  0% {
+    opacity: 0;
+    left: 0;
+  }
+
+  70% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    left: 100%;
+  }
+}
+
+/*# sourceMappingURL=components_beam_styles_module_4dc8125a.css.map*/

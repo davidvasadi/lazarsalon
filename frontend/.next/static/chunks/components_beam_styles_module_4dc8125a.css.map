@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 1, "column": 0}, "map": {"version":3,"sources":["file:///Users/dave/Desktop/projects/lazarsalon/lazarsalon/frontend/components/beam/styles.module.css"],"sourcesContent":[".meteor {\n  transform: rotate(-180deg);\n  animation: meteor 3s linear;\n  animation-delay: var(--meteor-delay, 0s);\n  animation-duration: var(--meteor-duration, 2s);\n}\n\n.meteor::before {\n  content: '';\n  position: absolute;\n  top: 50%;\n  transform: translateY(-50%);\n  width: var(--meteor-width, 50px);\n  height: 1px;\n  background: linear-gradient(\n    90deg,\n    var(--cyan-500),\n    var(--blue-500),\n    transparent\n  );\n}\n\n@keyframes meteor {\n  0% {\n    left: 0;\n    opacity: 0;\n  }\n  70% {\n    opacity: 1;\n  }\n  100% {\n    left: 100%;\n    opacity: 0;\n  }\n}\n"],"names":[],"mappings":"AAAA;;;;;;;AAOA;;;;;;;;;;AAeA","debugId":null}}]
+}
