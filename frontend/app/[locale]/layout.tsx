@@ -1,0 +1,68 @@
+import { GeistSans } from 'geist/font/sans';
+import { Metadata } from 'next';
+import { ViewTransitions } from 'next-view-transitions';
+import { Inter } from 'next/font/google';
+import { draftMode } from 'next/headers';
+import React from 'react';
+
+import { DraftModeBanner } from '@/components/draft-mode-banner';
+import { Footer } from '@/components/footer';
+import { Navbar } from '@/components/navbar';
+import { AIToast } from '@/components/toast';
+import { CartProvider } from '@/context/cart-context';
+import { generateMetadataObject } from '@/lib/shared/metadata';
+import { fetchSingleType } from '@/lib/strapi';
+import { cn } from '@/lib/utils';
+
+// const geist = GeistSans({
+//   subsets: ['geist'],
+//   display: 'swap',
+//   weight: ['400', '500', '600', '700', '800', '900'],
+// });
+
+// Default Global SEO for pages without them
+export async function generateMetadata(props: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const params = await props.params;
+
+  const pageData = await fetchSingleType('global', { locale: params.locale });
+
+  const seo = pageData.seo;
+  const metadata = generateMetadataObject(seo);
+  return metadata;
+}
+
+export default async function LocaleLayout(props: {
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
+}) {
+  const params = await props.params;
+
+  const { locale } = params;
+
+  const { children } = props;
+
+  const { isEnabled: isDraftMode } = await draftMode();
+
+  const pageData = await fetchSingleType('global', { locale: params.locale });
+
+  return (
+    <ViewTransitions>
+      <CartProvider>
+        <div
+          className={cn(
+            GeistSans.className,
+            'bg-charcoal antialiased h-full w-full'
+          )}
+        >
+          <Navbar data={pageData.navbar} locale={locale} />
+          {children}
+          <Footer data={pageData.footer} locale={locale} />
+          <AIToast />
+          {isDraftMode && <DraftModeBanner />}
+        </div>
+      </CartProvider>
+    </ViewTransitions>
+  );
+}

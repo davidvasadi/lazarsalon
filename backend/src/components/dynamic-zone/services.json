@@ -1,0 +1,27 @@
+{
+  "collectionName": "components_dynamic_zone_services",
+  "info": {
+    "displayName": "Services",
+    "icon": "scissors"
+  },
+  "options": {},
+  "attributes": {
+    "heading": {
+      "type": "string"
+    },
+    "sub_heading": {
+      "type": "string"
+    },
+    "pages": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::page.page"
+    },
+    "CTAs": {
+      "type": "component",
+      "component": "dynamic-zone.cta",
+      "repeatable": false
+    }
+  },
+  "config": {}
+}

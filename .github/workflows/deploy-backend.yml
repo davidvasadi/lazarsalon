@@ -1,11 +1,15 @@
 name: Deploy backend (CI build -> VPS)
 
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - "backend/**"
-      - ".github/workflows/deploy-backend.yml"
+  workflow_dispatch:
+  # push:
+  #   branches: [ main ]
+  #   paths:
+  #     - "backend/**"
+  #     - ".github/workflows/deploy-backend.yml"
+
+permissions:
+  contents: read
 
 jobs:
   build-and-deploy:
@@ -26,9 +30,13 @@ jobs:
           npm ci
           npm run build
 
-      - name: Create backend bundle (exclude uploads/env/tmp)
+      - name: Create backend bundle (exclude uploads/env/tmp/node_modules)
+        shell: bash
         run: |
-          rm -rf backend/node_modules
+          set -euo pipefail
+
+          rm -rf backend/node_modules || true
+
           tar -czf backend_bundle.tgz \
             --exclude='backend/public/uploads' \
             --exclude='backend/.env' \
@@ -76,17 +84,13 @@ jobs:
                  fi; \
                  ln -s \"\$STORAGE_UPLOADS\" \"\$BACKEND_DIR/public/uploads\"; \
                fi \
-            && if [ ! -L \"\$BACKEND_DIR/.tmp/data.db\" ]; then \
-                 if [ -f \"\$BACKEND_DIR/.tmp/data.db\" ]; then \
-                   mv \"\$BACKEND_DIR/.tmp/data.db\" \"/var/www/lazarsalon_storage/db/data.db_bak_\$(date +%F_%H%M%S)\"; \
-                 fi; \
-                 if [ -f \"\$STORAGE_DB/data.db\" ]; then \
-                   ln -s \"\$STORAGE_DB/data.db\" \"\$BACKEND_DIR/.tmp/data.db\"; \
-                 fi; \
-               fi \
+            && mkdir -p \"\$STORAGE_DB\" \
+            && touch \"\$STORAGE_DB/data.db\" \
+            && chmod 600 \"\$STORAGE_DB/data.db\" || true \
+            && ln -sfn \"\$STORAGE_DB/data.db\" \"\$BACKEND_DIR/.tmp/data.db\" \
             && rsync -a --delete \
-                 --exclude 'public/uploads' \
-                 --exclude '.tmp' \
+                 --exclude 'public/uploads/' \
+                 --exclude '.tmp/' \
                  --exclude '.env' \
                  --exclude '.env.*' \
                  --exclude 'node_modules' \
@@ -95,4 +99,3 @@ jobs:
             && cd \"\$BACKEND_DIR\" \
             && npm ci --omit=dev \
             && pm2 restart strapi"
-

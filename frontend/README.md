@@ -1,23 +1,45 @@
-# Lazars – A Modern Beauty & Style Experience Platform
+# 🌟 Next.js Multilingual Blog Template
 
-## Description (English)
+Welcome to our cutting-edge Next.js Multilingual Blog Template! This powerful and flexible template is designed to help you create stunning, multilingual blogs with ease.
 
-Lazars is a dynamic, headless CMS-based website built with modern technologies such as Strapi for the backend and React for the frontend. It enables seamless real-time content management and flexible customization—whether it’s services, menus, or custom settings—while providing a user-friendly, responsive interface for visitors to explore premium beauty salon services. The platform empowers content editors (clients and administrators) to easily update the online presentation, ensuring a modern, visually engaging, and easily maintainable user experience.
+## ✨ Features
 
-## Technologies Used
+- 🌐 Multilingual support (English and French)
+- 📱 Fully responsive design
+- 🎨 Customizable themes
+- 🖼️ Image optimization
+- 🔍 SEO-friendly
+- 🚀 Fast performance with Next.js
 
-- **Backend:**
-  - Strapi (Headless CMS)
-  - Node.js
-  - SQLite (default, configurable to MySQL/PostgreSQL, etc.)
-- **Frontend:**
-  - React
-  - Tailwind CSS
-  - Framer Motion
-  - React Scroll
-- **Deployment:**
-  - The backend can be hosted as a Node.js application (e.g., on a cPanel server)
-  - The frontend can be deployed via platforms like Netlify, Vercel, or as a static site hosted on cPanel
+## 🚀 Getting Started
+
+1. Clone this repository
+2. Install dependencies: `npm install`
+3. Copy `.env.example` to `.env.local` and update the variables
+4. Run the development server: `npm run dev`
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+## 🛠️ Customization
+
+- Modify `config.ts` to change language settings
+- Update `next.config.mjs` for advanced configurations
+- Add your own MDX files in the `blog` page directly
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [contributing guidelines](link-to-contributing-guidelines) for more information.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
+<footer>
+<p align="center">
+  Made by <a href="https://aceternity.com">Aceternity</a><br>
+  Powered by <a href="https://nextjs.org/">Next.js</a> | <a href="https://tailwindcss.com/">Tailwind CSS</a> | <a href="https://framer.com/motion">Framer Motion</a> | <a href="https://ui.aceternity.com">Aceternity UI</a>
+</p>
+</footer>
+
+++ Deploy

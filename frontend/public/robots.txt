@@ -1,8 +1,0 @@
-# robots.txt for https://lazarsalon.com
-# Engedélyezünk minden keresőrobotot, kivéve a /cgi-bin/ mappát.
-
-User-agent: *
-Disallow: /cgi-bin/
-
-# A webhelytérkép helye
-Sitemap: https://lazarsalon.com/sitemap.xml

@@ -1,0 +1,35 @@
+{
+  "collectionName": "components_dynamic_zone_team_sections",
+  "info": {
+    "displayName": "Team_Section",
+    "icon": "user"
+  },
+  "options": {},
+  "attributes": {
+    "eyebrow": {
+      "type": "string"
+    },
+    "heading": {
+      "type": "string"
+    },
+    "sub_heading": {
+      "type": "string"
+    },
+    "team_members": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::team-member.team-member"
+    },
+    "cta": {
+      "type": "component",
+      "component": "dynamic-zone.cta",
+      "repeatable": false
+    },
+    "avatar": {
+      "type": "component",
+      "component": "items.avatar",
+      "repeatable": false
+    }
+  },
+  "config": {}
+}

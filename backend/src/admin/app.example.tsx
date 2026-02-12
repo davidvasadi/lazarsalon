@@ -1,5 +1,7 @@
 import type { StrapiApp } from '@strapi/strapi/admin';
 
+// import PreviewButton from "./extensions/components/PreviewButton";
+
 export default {
   config: {
     locales: [
@@ -31,7 +33,5 @@ export default {
       // 'zh',
     ],
   },
-  bootstrap(app: StrapiApp) {
-    console.log(app);
-  },
+  bootstrap(app: StrapiApp) {},
 };

@@ -1,0 +1,85 @@
+{
+  "kind": "collectionType",
+  "collectionName": "pages",
+  "info": {
+    "singularName": "page",
+    "pluralName": "pages",
+    "displayName": "Pages",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
+    }
+  },
+  "attributes": {
+    "seo": {
+      "type": "component",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
+      "component": "shared.seo",
+      "repeatable": false
+    },
+    "slug": {
+      "type": "uid",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
+      "required": true,
+      "default": "slug"
+    },
+    "dynamic_zone": {
+      "type": "dynamiczone",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
+      "components": [
+        "dynamic-zone.hero",
+        "dynamic-zone.features",
+        "dynamic-zone.testimonials",
+        "dynamic-zone.how-it-works",
+        "dynamic-zone.brands",
+        "dynamic-zone.pricing",
+        "dynamic-zone.launches",
+        "dynamic-zone.cta",
+        "dynamic-zone.form-next-to-section",
+        "dynamic-zone.faq",
+        "dynamic-zone.services",
+        "dynamic-zone.gallery-slider",
+        "items.service-card",
+        "dynamic-zone.team-section",
+        "dynamic-zone.gallery"
+      ]
+    },
+    "pages": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::page.page",
+      "mappedBy": "page"
+    },
+    "page": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::page.page",
+      "inversedBy": "pages"
+    },
+    "label": {
+      "type": "string",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    }
+  }
+}

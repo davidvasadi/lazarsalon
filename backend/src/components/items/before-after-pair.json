@@ -1,0 +1,30 @@
+{
+  "collectionName": "components_items_before_after_pairs",
+  "info": {
+    "displayName": "Before_After_Pair",
+    "icon": "crop"
+  },
+  "options": {},
+  "attributes": {
+    "label": {
+      "type": "string"
+    },
+    "before_label": {
+      "type": "string"
+    },
+    "before_image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images", "files", "videos", "audios"]
+    },
+    "after_label": {
+      "type": "string"
+    },
+    "after_image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images", "files", "videos", "audios"]
+    }
+  },
+  "config": {}
+}
