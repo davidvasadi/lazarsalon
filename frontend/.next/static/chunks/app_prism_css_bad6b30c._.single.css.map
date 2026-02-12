@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 1, "column": 0}, "map": {"version":3,"sources":["turbopack:///[project]/app/prism.css"],"sourcesContent":["pre[class*='language-'] {\n  color: #f4f4f5;\n}\n\n.token.tag,\n.token.class-name,\n.token.selector,\n.token.selector .class,\n.token.selector.class,\n.token.function {\n  color: #60a5fa;\n}\n\n.token.attr-name,\n.token.keyword,\n.token.rule,\n.token.pseudo-class,\n.token.important {\n  color: #cbd5e1;\n}\n\n.token.module {\n  color: #34d399;\n}\n\n.token.attr-value,\n.token.class,\n.token.string,\n.token.property {\n  color: #5eead4;\n}\n\n.token.punctuation,\n.token.attr-equals {\n  color: #71717a;\n}\n\n.token.unit,\n.language-css .token.function {\n  color: #bae6fd;\n}\n\n.token.comment,\n.token.operator,\n.token.combinator {\n  color: #a1a1aa;\n}\n"],"names":[],"mappings":"AAAA;;;;AAIA;;;;AASA;;;;AAQA;;;;AAIA;;;;AAOA;;;;AAKA;;;;AAKA"}}]
-}
