@@ -18,7 +18,7 @@ export const AIToast = () => {
   return (
     <div
       className={clsx(
-        'fixed bottom-4 left-4 z-50 bg-secondary text-black px-6 py-3 rounded-lg shadow-lg flex items-center gap-4 opacity-0 transition-all',
+        'hidden fixed bottom-4 left-4 z-50 bg-secondary text-black px-6 py-3 rounded-lg shadow-lg flex items-center gap-4 opacity-0 transition-all',
         isOpen && 'opacity-100'
       )}
     >

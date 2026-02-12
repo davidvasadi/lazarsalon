@@ -658,6 +658,7 @@ export interface SharedUser extends Struct.ComponentSchema {
     firstname: Schema.Attribute.String;
     image: Schema.Attribute.Media<'images'>;
     job: Schema.Attribute.String;
+    label: Schema.Attribute.String;
     lastname: Schema.Attribute.String;
   };
 }

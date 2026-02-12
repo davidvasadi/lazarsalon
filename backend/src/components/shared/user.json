@@ -21,6 +21,9 @@
       "multiple": false,
       "required": false,
       "allowedTypes": ["images"]
+    },
+    "label": {
+      "type": "string"
     }
   }
 }
