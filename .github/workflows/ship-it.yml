@@ -234,6 +234,7 @@ jobs:
       needs.secrets-check.outputs.vercel_ok == 'true'
     env:
       FRONTEND_DIR: ${{ needs.changes.outputs.frontend_dir }}
+      VERCEL_TELEMETRY_DISABLED: '1'
     steps:
       - uses: actions/checkout@v4
 
@@ -253,30 +254,26 @@ jobs:
       - name: Vercel auth preflight
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_TELEMETRY_DISABLED: '1'
         run: vercel whoami --token="$VERCEL_TOKEN"
 
-      # IMPORTANT: run from REPO ROOT (no working-directory),
-      # because Vercel project Root Directory is already "frontend"
-      - name: Vercel Pull (prod env)
+      # ✅ PREVIEW pull + preview build + preview deploy (prebuilt)
+      # FONTOS: repo rootból fut, mert a Vercel Project Root Directory már "frontend"
+      - name: Vercel Pull (preview env)
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          VERCEL_TELEMETRY_DISABLED: '1'
-        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+        run: vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
 
-      - name: Vercel Build (prebuilt, prod)
+      - name: Vercel Build (PREVIEW prebuilt)
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_TELEMETRY_DISABLED: '1'
-        run: vercel build --prod --token="$VERCEL_TOKEN"
+        run: vercel build --token="$VERCEL_TOKEN"
 
       - name: Preview Deploy (prebuilt) + capture URL
         id: preview
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_TELEMETRY_DISABLED: '1'
         shell: bash
         run: |
           set -euo pipefail
@@ -302,11 +299,24 @@ jobs:
           done
           [ "$ok" -eq 1 ] || { echo "Preview smoke failed -> STOP (no prod deploy)"; exit 1; }
 
-      - name: Vercel Deploy (prod) ONLY after preview smoke OK
+      # ✅ PROD pull + prod build + prod deploy (prebuilt)
+      - name: Vercel Pull (production env)
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_TELEMETRY_DISABLED: '1'
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+      - name: Vercel Build (PROD prebuilt)
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: vercel build --prod --token="$VERCEL_TOKEN"
+
+      - name: Vercel Deploy (PROD prebuilt)
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: vercel deploy --prebuilt --prod --yes --token="$VERCEL_TOKEN"
+
 
   deploy-backend-to-vps:
     name: deploy-backend-to-vps

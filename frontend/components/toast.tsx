@@ -35,7 +35,7 @@ export const AIToast = () => {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-900 hover:text-gray-700 transition-colors"
             >
-              Megtekintés
+              Megtekintés:
               <ExternalLinkIcon className="h-3.5 w-3.5" />
             </a>
           </div>
