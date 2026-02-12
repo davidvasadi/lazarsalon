@@ -1,0 +1,479 @@
+name: ship-it 🚀
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+      - 'next/**'
+      - 'strapi/**'
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+      - 'next/**'
+      - 'strapi/**'
+      - '.github/workflows/**'
+  workflow_dispatch:
+    inputs:
+      deploy_cpanel:
+        description: 'LEGACY: deploy static build to cPanel (manual only)'
+        type: boolean
+        required: false
+        default: false
+
+concurrency:
+  group: ship-it-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: write
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  changes:
+    name: changes
+    runs-on: ubuntu-latest
+    outputs:
+      frontend_changed: ${{ steps.filter.outputs.frontend }}
+      backend_changed: ${{ steps.filter.outputs.backend }}
+      frontend_dir: ${{ steps.detect.outputs.frontend_dir }}
+      backend_dir: ${{ steps.detect.outputs.backend_dir }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect project directories
+        id: detect
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f "frontend/package.json" ]; then
+            echo "frontend_dir=frontend" >> "$GITHUB_OUTPUT"
+          elif [ -f "next/package.json" ]; then
+            echo "frontend_dir=next" >> "$GITHUB_OUTPUT"
+          else
+            echo "ERROR: cannot detect frontend dir (expected frontend/ or next/)" >&2
+            exit 1
+          fi
+
+          if [ -f "backend/package.json" ]; then
+            echo "backend_dir=backend" >> "$GITHUB_OUTPUT"
+          elif [ -f "strapi/package.json" ]; then
+            echo "backend_dir=strapi" >> "$GITHUB_OUTPUT"
+          else
+            echo "ERROR: cannot detect backend dir (expected backend/ or strapi/)" >&2
+            exit 1
+          fi
+
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+              - 'next/**'
+            backend:
+              - 'backend/**'
+              - 'strapi/**'
+
+      - name: Summary
+        shell: bash
+        run: |
+          echo "frontend_dir=${{ steps.detect.outputs.frontend_dir }}"
+          echo "backend_dir=${{ steps.detect.outputs.backend_dir }}"
+          echo "frontend_changed=${{ steps.filter.outputs.frontend }}"
+          echo "backend_changed=${{ steps.filter.outputs.backend }}"
+
+  secrets-check:
+    name: secrets-check
+    runs-on: ubuntu-latest
+    needs: changes
+    outputs:
+      vercel_ok: ${{ steps.out.outputs.vercel_ok }}
+      ssh_ok: ${{ steps.out.outputs.ssh_ok }}
+    steps:
+      - id: out
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          vercel_ok=false
+          if [ -n "${{ secrets.VERCEL_TOKEN }}" ] && [ -n "${{ secrets.VERCEL_ORG_ID }}" ] && [ -n "${{ secrets.VERCEL_PROJECT_ID }}" ]; then
+            vercel_ok=true
+          fi
+          echo "vercel_ok=$vercel_ok" >> "$GITHUB_OUTPUT"
+
+          ssh_ok=false
+          if [ -n "${{ secrets.SSH_HOST }}" ] && [ -n "${{ secrets.SSH_USER }}" ] && [ -n "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+            ssh_ok=true
+          fi
+          echo "ssh_ok=$ssh_ok" >> "$GITHUB_OUTPUT"
+
+  next-build:
+    name: next-build
+    needs: changes
+    if: ${{ needs.changes.outputs.frontend_changed == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ needs.changes.outputs.frontend_dir }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ needs.changes.outputs.frontend_dir }}/package-lock.json
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
+
+  strapi-build:
+    name: strapi-build
+    needs: changes
+    if: ${{ needs.changes.outputs.backend_changed == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ needs.changes.outputs.backend_dir }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ needs.changes.outputs.backend_dir }}/package-lock.json
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
+
+      - name: Create backend bundle (exclude uploads/env/tmp/node_modules)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ..
+          BACKEND_DIR="${{ needs.changes.outputs.backend_dir }}"
+
+          rm -rf "${BACKEND_DIR}/node_modules" || true
+
+          tar -czf backend_bundle.tgz \
+            --exclude="${BACKEND_DIR}/public/uploads" \
+            --exclude="${BACKEND_DIR}/.env" \
+            --exclude="${BACKEND_DIR}/.env.*" \
+            --exclude="${BACKEND_DIR}/.tmp" \
+            --exclude="${BACKEND_DIR}/node_modules" \
+            "${BACKEND_DIR}"
+
+      - name: Upload backend bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend_bundle
+          path: backend_bundle.tgz
+          if-no-files-found: error
+          retention-days: 7
+
+  deploy-frontend-to-vercel:
+    name: deploy-frontend-to-vercel
+    needs: [changes, next-build, secrets-check]
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      vars.AUTO_DEPLOY == 'true' &&
+      needs.changes.outputs.frontend_changed == 'true' &&
+      needs.next-build.result == 'success' &&
+      needs.secrets-check.outputs.vercel_ok == 'true'
+    defaults:
+      run:
+        working-directory: ${{ needs.changes.outputs.frontend_dir }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ needs.changes.outputs.frontend_dir }}/package-lock.json
+
+      - name: Install Vercel CLI
+        run: npm i -g vercel@latest
+
+      - name: Vercel auth preflight
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TELEMETRY_DISABLED: '1'
+        run: vercel whoami --token="$VERCEL_TOKEN"
+
+      - name: Vercel Pull (prod env)
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TELEMETRY_DISABLED: '1'
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+      - name: Vercel Build (prebuilt, prod)
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TELEMETRY_DISABLED: '1'
+        run: vercel build --prod --token="$VERCEL_TOKEN"
+
+      - name: Preview Deploy (prebuilt) + capture URL
+        id: preview
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TELEMETRY_DISABLED: '1'
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")"
+          echo "preview_url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Preview URL: $URL"
+
+      - name: Smoke test preview (must be 2xx/3xx)
+        env:
+          PREVIEW_URL: ${{ steps.preview.outputs.preview_url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="${PREVIEW_URL}"
+          [ -n "$url" ] || { echo "Missing preview URL"; exit 1; }
+
+          ok=0
+          for i in 1 2 3 4 5; do
+            code="$(curl -sS -o /dev/null -w "%{http_code}" -L --connect-timeout 5 --max-time 20 "$url" || echo 000)"
+            echo "try=$i code=$code url=$url"
+            if [ "$code" -ge 200 ] && [ "$code" -lt 400 ]; then ok=1; break; fi
+            sleep 2
+          done
+          [ "$ok" -eq 1 ] || { echo "Preview smoke failed -> STOP (no prod deploy)"; exit 1; }
+
+      - name: Vercel Deploy (prod) ONLY after preview smoke OK
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TELEMETRY_DISABLED: '1'
+        run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+
+  deploy-backend-to-vps:
+    name: deploy-backend-to-vps
+    needs: [changes, strapi-build, secrets-check]
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      vars.AUTO_DEPLOY == 'true' &&
+      needs.changes.outputs.backend_changed == 'true' &&
+      needs.strapi-build.result == 'success' &&
+      needs.secrets-check.outputs.ssh_ok == 'true'
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: backend_bundle
+          path: .
+
+      - name: Upload bundle to VPS (/tmp/backend_bundle.tgz)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          source: 'backend_bundle.tgz'
+          target: '/tmp'
+          overwrite: true
+
+      - name: Deploy on VPS (atomic + rollback + persistent uploads/db)
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          DEPLOY_SHA: ${{ github.sha }}
+          BUNDLE_DIR: ${{ needs.changes.outputs.backend_dir }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          envs: DEPLOY_SHA,BUNDLE_DIR
+          script_stop: true
+          command_timeout: 60m
+          script: |
+            set -Eeuo pipefail
+
+            APP_ROOT="/var/www/lazarsalon"
+            LIVE_DIR="${APP_ROOT}/backend"
+            STORAGE_ROOT="/var/www/lazarsalon_storage"
+            STORAGE_UPLOADS="${STORAGE_ROOT}/uploads"
+            STORAGE_DB="${STORAGE_ROOT}/db"
+            RELEASES="${STORAGE_ROOT}/releases"
+            LOCK_FILE="/var/lock/lazarsalon-backend-deploy.lock"
+
+            TS="$(date +%F_%H%M%S)"
+            NEW_DIR="${LIVE_DIR}.new_${DEPLOY_SHA}"
+            PREV_DIR="${LIVE_DIR}.prev_${TS}"
+            TMP_DIR="/tmp/backend_deploy_${DEPLOY_SHA}"
+
+            log(){ printf '[%s] %s\n' "$(date -Is)" "$*"; }
+
+            [ -n "${DEPLOY_SHA:-}" ] || { log "DEPLOY_SHA missing"; exit 1; }
+            [ -n "${BUNDLE_DIR:-}" ] || { log "BUNDLE_DIR missing"; exit 1; }
+
+            command -v flock >/dev/null 2>&1 || { log "flock missing"; exit 1; }
+            exec 9>"$LOCK_FILE"
+            if ! flock -n 9; then
+              log "Another deploy is running -> exit 0"
+              exit 0
+            fi
+
+            mkdir -p "$RELEASES" "$STORAGE_UPLOADS" "$STORAGE_DB"
+
+            cp -a "/tmp/backend_bundle.tgz" "${RELEASES}/backend_bundle_${DEPLOY_SHA}_${TS}.tgz" || true
+
+            cleanup(){
+              rm -rf "$TMP_DIR" 2>/dev/null || true
+              if [ -d "$NEW_DIR" ] && [ "$(readlink -f "$NEW_DIR" || true)" != "$(readlink -f "$LIVE_DIR" || true)" ]; then
+                rm -rf "$NEW_DIR" 2>/dev/null || true
+              fi
+            }
+            trap cleanup EXIT
+
+            rm -rf "$TMP_DIR" 2>/dev/null || true
+            mkdir -p "$TMP_DIR"
+            tar -xzf /tmp/backend_bundle.tgz -C "$TMP_DIR"
+            rm -f /tmp/backend_bundle.tgz
+
+            rm -rf "$NEW_DIR" 2>/dev/null || true
+            mkdir -p "$NEW_DIR"
+
+            rsync -a --delete \
+              --exclude 'public/uploads/' \
+              --exclude '.tmp/' \
+              --exclude '.env' \
+              --exclude '.env.*' \
+              --exclude 'node_modules' \
+              "${TMP_DIR}/${BUNDLE_DIR}/" "${NEW_DIR}/"
+
+            if [ -f "${LIVE_DIR}/.env" ]; then
+              cp -a "${LIVE_DIR}/.env" "${NEW_DIR}/.env"
+            fi
+
+            mkdir -p "${NEW_DIR}/public" "${NEW_DIR}/.tmp"
+
+            ln -sfn "$STORAGE_UPLOADS" "${NEW_DIR}/public/uploads"
+
+            if [ -f "${LIVE_DIR}/.tmp/data.db" ] && [ ! -L "${LIVE_DIR}/.tmp/data.db" ] && [ ! -f "${STORAGE_DB}/data.db" ]; then
+              mv "${LIVE_DIR}/.tmp/data.db" "${STORAGE_DB}/data.db" || true
+            fi
+            if [ ! -f "${STORAGE_DB}/data.db" ]; then
+              touch "${STORAGE_DB}/data.db"
+              chmod 600 "${STORAGE_DB}/data.db" || true
+            fi
+            ln -sfn "${STORAGE_DB}/data.db" "${NEW_DIR}/.tmp/data.db"
+
+            cd "$NEW_DIR"
+            npm ci --omit=dev
+
+            log "Stopping strapi..."
+            pm2 stop strapi || true
+
+            if [ -d "$LIVE_DIR" ]; then
+              mv "$LIVE_DIR" "$PREV_DIR"
+            fi
+            mv "$NEW_DIR" "$LIVE_DIR"
+
+            log "Restarting strapi..."
+            pm2 restart strapi --update-env
+
+            smoke_ok=0
+            for i in 1 2 3 4 5 6 7 8 9 10; do
+              code="$(curl -sS -o /dev/null -w "%{http_code}" -L --connect-timeout 3 --max-time 10 "http://127.0.0.1:1337/admin" || echo 000)"
+              log "smoke try=$i admin_code=$code"
+              if [ "$code" -ge 200 ] && [ "$code" -lt 400 ]; then smoke_ok=1; break; fi
+              sleep 2
+            done
+
+            if [ "$smoke_ok" -ne 1 ]; then
+              log "SMOKE FAIL -> ROLLBACK"
+              pm2 stop strapi || true
+              if [ -d "$PREV_DIR" ]; then
+                rm -rf "$LIVE_DIR" 2>/dev/null || true
+                mv "$PREV_DIR" "$LIVE_DIR"
+              fi
+              pm2 restart strapi --update-env || true
+              exit 1
+            fi
+
+            ls -dt "${APP_ROOT}/backend.prev_"* 2>/dev/null | tail -n +4 | xargs -r rm -rf || true
+
+            log "DEPLOY DONE ✅"
+
+  cpanel-deploy:
+    name: cpanel-deploy (legacy manual)
+    needs: changes
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.deploy_cpanel == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: LEGACY NOTICE
+        run: |
+          echo "This is a legacy cPanel deploy. If frontend is now Next+Vercel, you likely don't need this."
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ needs.changes.outputs.frontend_dir }}/package-lock.json
+
+      - name: Install & build (legacy expects Vite dist/)
+        working-directory: ${{ needs.changes.outputs.frontend_dir }}
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: Upload dist to temp folder on cPanel
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.CPANEL_HOST }}
+          username: ${{ secrets.CPANEL_USER }}
+          password: ${{ secrets.CPANEL_PASSWORD }}
+          port: ${{ secrets.CPANEL_PORT }}
+          source: '${{ needs.changes.outputs.frontend_dir }}/dist/**'
+          target: '/home/${{ secrets.CPANEL_USER }}/tmp/frontend_deploy'
+          strip_components: 2
+          overwrite: true
+
+      - name: Activate new frontend build (safe replace)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.CPANEL_HOST }}
+          username: ${{ secrets.CPANEL_USER }}
+          password: ${{ secrets.CPANEL_PASSWORD }}
+          port: ${{ secrets.CPANEL_PORT }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            TARGET="${{ secrets.CPANEL_TARGET_DIR }}"
+            USER="${{ secrets.CPANEL_USER }}"
+            TMP="/home/${USER}/tmp/frontend_deploy"
+            [ -d "$TMP" ] || { echo "ERROR: temp deploy folder not found: $TMP"; exit 1; }
+            cd "$TARGET"
+            rm -rf assets icons || true
+            cp -a "$TMP/." "$TARGET/"
+            rm -rf "$TMP"
+            echo "✅ Frontend deployed to: $TARGET"

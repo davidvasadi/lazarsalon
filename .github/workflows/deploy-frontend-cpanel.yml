@@ -1,11 +1,15 @@
 name: Deploy frontend to cPanel
 
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - "frontend/**"
-      - ".github/workflows/deploy-frontend-cpanel.yml"
+  workflow_dispatch:
+  # push:
+  #   branches: [ main ]
+  #   paths:
+  #     - "frontend/**"
+  #     - ".github/workflows/deploy-frontend-cpanel.yml"
+
+permissions:
+  contents: read
 
 jobs:
   build-and-deploy:
@@ -38,19 +42,20 @@ jobs:
           username: ${{ secrets.CPANEL_USER }}
           password: ${{ secrets.CPANEL_PASSWORD }}
           port: ${{ secrets.CPANEL_PORT }}
-          source: "frontend/dist/**"
-          target: "/home/${{ secrets.CPANEL_USER }}/tmp/frontend_deploy"
+          source: 'frontend/dist/**'
+          target: '/home/${{ secrets.CPANEL_USER }}/tmp/frontend_deploy'
           strip_components: 2
           overwrite: true
 
       # 2) Aktiválás: build fájlok cseréje úgy, hogy api/ és .env megmaradjon
       - name: Activate new frontend build (safe replace)
-        uses: appleboy/ssh-action@v1
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.CPANEL_HOST }}
           username: ${{ secrets.CPANEL_USER }}
           password: ${{ secrets.CPANEL_PASSWORD }}
           port: ${{ secrets.CPANEL_PORT }}
+          script_stop: true
           script: |
             set -euo pipefail
 
@@ -66,7 +71,7 @@ jobs:
             cd "$TARGET"
 
             # tipikus Vite build mappák törlése, a többi (api/, .env, stb) marad
-            rm -rf assets icons
+            rm -rf assets icons || true
 
             # index.html + minden build artifact frissítése (rejtett fájlokat is kezeli)
             cp -a "$TMP/." "$TARGET/"
