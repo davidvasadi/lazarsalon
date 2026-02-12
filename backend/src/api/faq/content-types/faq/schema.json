@@ -1,19 +1,36 @@
 {
-  "kind": "singleType",
+  "kind": "collectionType",
   "collectionName": "faqs",
   "info": {
     "singularName": "faq",
     "pluralName": "faqs",
-    "displayName": "FAQ"
+    "displayName": "FAQ",
+    "description": ""
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
+    }
   },
   "attributes": {
-    "FAQItem": {
-      "type": "component",
-      "repeatable": true,
-      "component": "faq.faq-item"
+    "question": {
+      "type": "string",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "answer": {
+      "type": "text",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
     }
   }
 }

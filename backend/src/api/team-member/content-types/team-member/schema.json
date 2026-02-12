@@ -4,45 +4,117 @@
   "info": {
     "singularName": "team-member",
     "pluralName": "team-members",
-    "displayName": "Team Member"
+    "displayName": "Team Members"
   },
   "options": {
     "draftAndPublish": true
   },
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
+    }
+  },
   "attributes": {
-    "Name": {
-      "type": "string"
+    "name": {
+      "type": "string",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
     },
-    "Role": {
-      "type": "string"
+    "role": {
+      "type": "string",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
     },
-    "Specialty": {
-      "type": "string"
+    "specialty": {
+      "type": "string",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
     },
-    "Experience": {
-      "type": "string"
+    "bio": {
+      "type": "blocks",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
     },
-    "Image": {
-      "allowedTypes": [
-        "images",
-        "files",
-        "videos",
-        "audios"
-      ],
+    "experience": {
+      "type": "string",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "photo": {
       "type": "media",
-      "multiple": true
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
+      "multiple": false,
+      "allowedTypes": ["images", "files", "videos", "audios"]
+    },
+    "order": {
+      "type": "integer",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
+      "default": 0
+    },
+    "featured": {
+      "type": "boolean",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
     },
     "Instagram": {
-      "type": "string"
+      "type": "string",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
     },
     "Facebook": {
-      "type": "string"
+      "type": "string",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
     },
     "Website": {
-      "type": "string"
+      "type": "string",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
     },
-    "Booking": {
-      "type": "string"
+    "button": {
+      "type": "component",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
+      "component": "shared.button",
+      "repeatable": false
     }
   }
 }

@@ -1,0 +1,30 @@
+{
+  "collectionName": "components_dynamic_zone_galleries",
+  "info": {
+    "displayName": "Gallery",
+    "icon": "brush"
+  },
+  "options": {},
+  "attributes": {
+    "enable_grayscale": {
+      "type": "boolean"
+    },
+    "heading": {
+      "type": "string"
+    },
+    "sub_heading": {
+      "type": "string"
+    },
+    "gallery_item": {
+      "type": "component",
+      "component": "items.gallery-item",
+      "repeatable": true
+    },
+    "button": {
+      "type": "component",
+      "component": "shared.button",
+      "repeatable": false
+    }
+  },
+  "config": {}
+}

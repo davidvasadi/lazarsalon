@@ -1,0 +1,22 @@
+{
+  "collectionName": "components_dynamic_zone_gallery_sliders",
+  "info": {
+    "displayName": "Gallery_Slider",
+    "icon": "brush"
+  },
+  "options": {},
+  "attributes": {
+    "heading": {
+      "type": "string"
+    },
+    "sub_heading": {
+      "type": "string"
+    },
+    "before_after_pair": {
+      "type": "component",
+      "component": "items.before-after-pair",
+      "repeatable": true
+    }
+  },
+  "config": {}
+}

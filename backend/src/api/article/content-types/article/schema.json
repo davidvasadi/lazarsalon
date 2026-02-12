@@ -4,46 +4,86 @@
   "info": {
     "singularName": "article",
     "pluralName": "articles",
-    "displayName": "Article",
-    "description": "Create your blog content"
+    "displayName": "Articles",
+    "description": ""
   },
   "options": {
     "draftAndPublish": true
   },
-  "pluginOptions": {},
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
+    }
+  },
   "attributes": {
+    "seo": {
+      "type": "component",
+      "repeatable": false,
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
+      "component": "shared.seo"
+    },
     "title": {
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "string"
     },
     "description": {
-      "type": "text",
-      "maxLength": 80
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
+      "type": "text"
     },
     "slug": {
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "uid",
       "targetField": "title"
     },
-    "cover": {
-      "type": "media",
-      "multiple": false,
-      "required": false,
-      "allowedTypes": ["images", "files", "videos"]
+    "content": {
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
+      "type": "blocks"
     },
-    "author": {
+    "categories": {
       "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::author.author",
-      "inversedBy": "articles"
-    },
-    "category": {
-      "type": "relation",
-      "relation": "manyToOne",
+      "relation": "manyToMany",
       "target": "api::category.category",
       "inversedBy": "articles"
     },
-    "blocks": {
+    "dynamic_zone": {
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
       "type": "dynamiczone",
-      "components": ["shared.media", "shared.quote", "shared.rich-text", "shared.slider"]
+      "components": ["dynamic-zone.related-articles", "dynamic-zone.cta"]
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images", "files", "videos", "audios"],
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
     }
   }
 }

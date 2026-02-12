@@ -1,0 +1,22 @@
+{
+  "collectionName": "components_items_avatars",
+  "info": {
+    "displayName": "avatar",
+    "icon": "user"
+  },
+  "options": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string"
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images", "files", "videos", "audios"]
+    }
+  },
+  "config": {}
+}

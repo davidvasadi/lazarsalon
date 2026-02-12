@@ -1,0 +1,52 @@
+{
+  "collectionName": "components_shared_sections",
+  "info": {
+    "displayName": "Section",
+    "icon": "cursor"
+  },
+  "options": {},
+  "attributes": {
+    "heading": {
+      "type": "string"
+    },
+    "sub_heading": {
+      "type": "string"
+    },
+    "users": {
+      "type": "component",
+      "component": "shared.user",
+      "repeatable": true
+    },
+    "address_label": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "opening_hours": {
+      "type": "component",
+      "component": "shared.opening-hours",
+      "repeatable": true
+    },
+    "map_route_url": {
+      "type": "string"
+    },
+    "map_city_label": {
+      "type": "string"
+    },
+    "booking_url": {
+      "type": "string"
+    },
+    "privacy_url": {
+      "type": "string"
+    },
+    "cover": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images", "files", "videos", "audios"]
+    }
+  }
+}

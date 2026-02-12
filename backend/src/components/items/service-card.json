@@ -1,0 +1,16 @@
+{
+  "collectionName": "components_items_service_cards",
+  "info": {
+    "displayName": "Service_Card",
+    "icon": "book"
+  },
+  "options": {},
+  "attributes": {
+    "pages": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::page.page"
+    }
+  },
+  "config": {}
+}

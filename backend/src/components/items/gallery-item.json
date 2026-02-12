@@ -1,0 +1,36 @@
+{
+  "collectionName": "components_items_gallery_items",
+  "info": {
+    "displayName": "Gallery_Item",
+    "icon": "brush"
+  },
+  "options": {},
+  "attributes": {
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images", "files", "videos", "audios"]
+    },
+    "kicker": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "layout": {
+      "type": "enumeration",
+      "enum": ["square", "wide", "feature", "tall"]
+    },
+    "link_url": {
+      "type": "string"
+    },
+    "link_target": {
+      "type": "enumeration",
+      "enum": ["_self", "_blank"]
+    },
+    "priority": {
+      "type": "integer"
+    }
+  },
+  "config": {}
+}
