@@ -24,20 +24,18 @@ export const AIToast = () => {
     >
       <div className="flex items-start">
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-900">Strapi AI</p>
+          <p className="text-sm font-medium text-gray-900">LAZARS®</p>
           <p className="mt-1 text-sm text-gray-500">
-            You can now try Strapi AI for yourself!
+            Az oldal sütiket használ!
           </p>
           <div className="mt-3">
             <a
-              href={
-                'https://docs.strapi.io/cms/configurations/admin-panel#strapi-ai'
-              }
+              href={'https://lazarsalon.com/privacy'}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-900 hover:text-gray-700 transition-colors"
             >
-              Go to docs
+              Megtekintés
               <ExternalLinkIcon className="h-3.5 w-3.5" />
             </a>
           </div>
@@ -48,7 +46,7 @@ export const AIToast = () => {
             onClick={() => setIsOpen(false)}
             className="inline-flex rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
           >
-            <span className="sr-only">Close</span>
+            <span className="sr-only">Bezár</span>
             <XIcon className="h-5 w-5" />
           </button>
         </div>
