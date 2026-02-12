@@ -208,6 +208,17 @@ jobs:
           cache: npm
           cache-dependency-path: ${{ needs.changes.outputs.frontend_dir }}/package-lock.json
 
+      - name: Debug node/npm
+        run: |
+          node -v
+          npm -v
+          which node
+          which npm
+
+      # ✅ EZ HIÁNYZOTT: vercel build különben “Installing dependencies…” és ott dobja a spawn npm ENOENT-et
+      - name: Install deps (needed for vercel build)
+        run: npm ci --no-audit --no-fund
+
       - name: Install Vercel CLI
         run: npm i -g vercel@latest
 
