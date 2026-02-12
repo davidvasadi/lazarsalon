@@ -77,9 +77,11 @@ jobs:
             frontend:
               - 'frontend/**'
               - 'next/**'
+              - '.github/workflows/**'   # ✅ ha csak workflow változik, akkor is fusson
             backend:
               - 'backend/**'
               - 'strapi/**'
+              - '.github/workflows/**'   # ✅ ha csak workflow változik, akkor is fusson
 
       - name: Summary
         shell: bash
@@ -199,6 +201,11 @@ jobs:
     defaults:
       run:
         working-directory: ${{ needs.changes.outputs.frontend_dir }}
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TELEMETRY_DISABLED: '1'
     steps:
       - uses: actions/checkout@v4
 
@@ -215,7 +222,7 @@ jobs:
           which node
           which npm
 
-      # ✅ EZ HIÁNYZOTT: vercel build különben “Installing dependencies…” és ott dobja a spawn npm ENOENT-et
+      # ✅ 1) kell a deps, különben vercel build közben "Installing dependencies..." és ott tud megdögleni
       - name: Install deps (needed for vercel build)
         run: npm ci --no-audit --no-fund
 
@@ -223,30 +230,29 @@ jobs:
         run: npm i -g vercel@latest
 
       - name: Vercel auth preflight
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_TELEMETRY_DISABLED: '1'
         run: vercel whoami --token="$VERCEL_TOKEN"
 
       - name: Vercel Pull (prod env)
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          VERCEL_TELEMETRY_DISABLED: '1'
         run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
 
+      # ✅ 2) védelem: ha a letöltött env fájl tartalmaz PATH= sort, az tönkre tudja tenni a buildet
+      - name: Sanitize pulled env (avoid PATH override)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f .vercel/.env.production.local ]; then
+            echo "Dangerous vars (if any):"
+            grep -nE '^(PATH|NODE_PATH|NPM_CONFIG_PREFIX|npm_config_prefix)=' .vercel/.env.production.local || true
+            sed -i -E '/^(PATH|NODE_PATH|NPM_CONFIG_PREFIX|npm_config_prefix)=/d' .vercel/.env.production.local || true
+          fi
+          echo "npm: $(command -v npm)"
+          npm -v
+
       - name: Vercel Build (prebuilt, prod)
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_TELEMETRY_DISABLED: '1'
         run: vercel build --prod --token="$VERCEL_TOKEN"
 
       - name: Preview Deploy (prebuilt) + capture URL
         id: preview
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_TELEMETRY_DISABLED: '1'
         shell: bash
         run: |
           set -euo pipefail
@@ -273,9 +279,6 @@ jobs:
           [ "$ok" -eq 1 ] || { echo "Preview smoke failed -> STOP (no prod deploy)"; exit 1; }
 
       - name: Vercel Deploy (prod) ONLY after preview smoke OK
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_TELEMETRY_DISABLED: '1'
         run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
 
   deploy-backend-to-vps:
@@ -426,7 +429,6 @@ jobs:
             fi
 
             ls -dt "${APP_ROOT}/backend.prev_"* 2>/dev/null | tail -n +4 | xargs -r rm -rf || true
-
             log "DEPLOY DONE ✅"
 
   cpanel-deploy:
