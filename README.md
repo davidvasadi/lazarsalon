@@ -1,8 +1,8 @@
-# LaunchPad - Official Strapi Demo
+# LAZARS® — Official Marketing Website
 
-![LAZARS®](./LAZARS_by_[davelopment]®.png)
+![LAZARS®](./LAZARS.png)
 
-Welcome aboard **LaunchPad**, the official Strapi demo application, where we launch your content into the stratosphere at the speed of _"we-can't-even-measure-it!"_.
+Welcome aboard **LAZARS®**, the official Strapi demo application, where we launch your content into the stratosphere at the speed of _"we-can't-even-measure-it!"_.
 This repository contains the following:
 
 - A Strapi project with content-types and data already onboard
@@ -12,7 +12,7 @@ This repository contains the following:
 
 Strap yourself in! You can get started with this project on your local machine by following the instructions below, or you can [request a private instance on our website](https://strapi.io/demo)
 
-## 1. Clone Launchpad
+## 1. Clone LAZARS®
 
 To infinity and beyond! 🚀 Before you take off, clone the repo and set it up:
 
