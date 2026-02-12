@@ -42,3 +42,6 @@ backend/public/uploads/*
 *.sqlite
 *.sqlite3
 backend/data/*.tar.gz
+
+# local trash
+.trash/
