@@ -18,6 +18,16 @@ on:
       - '.github/workflows/**'
   workflow_dispatch:
     inputs:
+      deploy_frontend:
+        description: 'Deploy FRONTEND to Vercel (manual)'
+        type: boolean
+        required: false
+        default: false
+      deploy_backend:
+        description: 'Deploy BACKEND to VPS (manual)'
+        type: boolean
+        required: false
+        default: false
       deploy_cpanel:
         description: 'LEGACY: deploy static build to cPanel (manual only)'
         type: boolean
@@ -40,8 +50,8 @@ jobs:
     name: changes
     runs-on: ubuntu-latest
     outputs:
-      frontend_changed: ${{ steps.filter.outputs.frontend }}
-      backend_changed: ${{ steps.filter.outputs.backend }}
+      frontend_changed: ${{ steps.decide.outputs.frontend_changed }}
+      backend_changed: ${{ steps.decide.outputs.backend_changed }}
       frontend_dir: ${{ steps.detect.outputs.frontend_dir }}
       backend_dir: ${{ steps.detect.outputs.backend_dir }}
     steps:
@@ -77,19 +87,38 @@ jobs:
             frontend:
               - 'frontend/**'
               - 'next/**'
-              - '.github/workflows/**'   # ✅ ha csak workflow változik, akkor is fusson
             backend:
               - 'backend/**'
               - 'strapi/**'
-              - '.github/workflows/**'   # ✅ ha csak workflow változik, akkor is fusson
+
+      - name: Decide changes (allow manual force)
+        id: decide
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          frontend_changed="${{ steps.filter.outputs.frontend }}"
+          backend_changed="${{ steps.filter.outputs.backend }}"
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ "${{ github.event.inputs.deploy_frontend }}" = "true" ]; then
+              frontend_changed="true"
+            fi
+            if [ "${{ github.event.inputs.deploy_backend }}" = "true" ]; then
+              backend_changed="true"
+            fi
+          fi
+
+          echo "frontend_changed=$frontend_changed" >> "$GITHUB_OUTPUT"
+          echo "backend_changed=$backend_changed" >> "$GITHUB_OUTPUT"
 
       - name: Summary
         shell: bash
         run: |
           echo "frontend_dir=${{ steps.detect.outputs.frontend_dir }}"
           echo "backend_dir=${{ steps.detect.outputs.backend_dir }}"
-          echo "frontend_changed=${{ steps.filter.outputs.frontend }}"
-          echo "backend_changed=${{ steps.filter.outputs.backend }}"
+          echo "frontend_changed=${{ steps.decide.outputs.frontend_changed }}"
+          echo "backend_changed=${{ steps.decide.outputs.backend_changed }}"
 
   secrets-check:
     name: secrets-check
@@ -124,6 +153,12 @@ jobs:
     defaults:
       run:
         working-directory: ${{ needs.changes.outputs.frontend_dir }}
+    env:
+      # Buildhez elég, hogy ne legyen localhostos meglepi:
+      NEXT_PUBLIC_STRAPI_URL: https://api.lazarsalon.com
+      NEXT_PUBLIC_API_URL: https://api.lazarsalon.com
+      NEXT_PUBLIC_SITE_URL: https://lazarsalon.com
+      WEBSITE_URL: https://lazarsalon.com
     steps:
       - uses: actions/checkout@v4
 
@@ -192,12 +227,13 @@ jobs:
     needs: [changes, next-build, secrets-check]
     runs-on: ubuntu-latest
     if: >-
-      github.event_name == 'push' &&
-      github.ref == 'refs/heads/main' &&
-      vars.AUTO_DEPLOY == 'true' &&
       needs.changes.outputs.frontend_changed == 'true' &&
       needs.next-build.result == 'success' &&
-      needs.secrets-check.outputs.vercel_ok == 'true'
+      needs.secrets-check.outputs.vercel_ok == 'true' &&
+      (
+        (github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AUTO_DEPLOY == 'true') ||
+        (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_frontend == 'true')
+      )
     defaults:
       run:
         working-directory: ${{ needs.changes.outputs.frontend_dir }}
@@ -215,48 +251,23 @@ jobs:
           cache: npm
           cache-dependency-path: ${{ needs.changes.outputs.frontend_dir }}/package-lock.json
 
-      - name: Debug node/npm
-        run: |
-          node -v
-          npm -v
-          which node
-          which npm
-
-      # ✅ 1) kell a deps, különben vercel build közben "Installing dependencies..." és ott tud megdögleni
-      - name: Install deps (needed for vercel build)
-        run: npm ci --no-audit --no-fund
-
       - name: Install Vercel CLI
         run: npm i -g vercel@latest
 
       - name: Vercel auth preflight
         run: vercel whoami --token="$VERCEL_TOKEN"
 
+      # Link + env pull (CI-safe, no prompts)
       - name: Vercel Pull (prod env)
         run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
 
-      # ✅ 2) védelem: ha a letöltött env fájl tartalmaz PATH= sort, az tönkre tudja tenni a buildet
-      - name: Sanitize pulled env (avoid PATH override)
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ -f .vercel/.env.production.local ]; then
-            echo "Dangerous vars (if any):"
-            grep -nE '^(PATH|NODE_PATH|NPM_CONFIG_PREFIX|npm_config_prefix)=' .vercel/.env.production.local || true
-            sed -i -E '/^(PATH|NODE_PATH|NPM_CONFIG_PREFIX|npm_config_prefix)=/d' .vercel/.env.production.local || true
-          fi
-          echo "npm: $(command -v npm)"
-          npm -v
-
-      - name: Vercel Build (prebuilt, prod)
-        run: vercel build --prod --token="$VERCEL_TOKEN"
-
-      - name: Preview Deploy (prebuilt) + capture URL
+      # ✅ Ne local build: Vercel építsen (kevesebb CI-hiba)
+      - name: Preview Deploy + capture URL
         id: preview
         shell: bash
         run: |
           set -euo pipefail
-          URL="$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")"
+          URL="$(vercel deploy --yes --token="$VERCEL_TOKEN")"
           echo "preview_url=$URL" >> "$GITHUB_OUTPUT"
           echo "Preview URL: $URL"
 
@@ -279,19 +290,20 @@ jobs:
           [ "$ok" -eq 1 ] || { echo "Preview smoke failed -> STOP (no prod deploy)"; exit 1; }
 
       - name: Vercel Deploy (prod) ONLY after preview smoke OK
-        run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+        run: vercel deploy --prod --yes --token="$VERCEL_TOKEN"
 
   deploy-backend-to-vps:
     name: deploy-backend-to-vps
     needs: [changes, strapi-build, secrets-check]
     runs-on: ubuntu-latest
     if: >-
-      github.event_name == 'push' &&
-      github.ref == 'refs/heads/main' &&
-      vars.AUTO_DEPLOY == 'true' &&
       needs.changes.outputs.backend_changed == 'true' &&
       needs.strapi-build.result == 'success' &&
-      needs.secrets-check.outputs.ssh_ok == 'true'
+      needs.secrets-check.outputs.ssh_ok == 'true' &&
+      (
+        (github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AUTO_DEPLOY == 'true') ||
+        (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_backend == 'true')
+      )
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -340,9 +352,6 @@ jobs:
 
             log(){ printf '[%s] %s\n' "$(date -Is)" "$*"; }
 
-            [ -n "${DEPLOY_SHA:-}" ] || { log "DEPLOY_SHA missing"; exit 1; }
-            [ -n "${BUNDLE_DIR:-}" ] || { log "BUNDLE_DIR missing"; exit 1; }
-
             command -v flock >/dev/null 2>&1 || { log "flock missing"; exit 1; }
             exec 9>"$LOCK_FILE"
             if ! flock -n 9; then
@@ -351,7 +360,6 @@ jobs:
             fi
 
             mkdir -p "$RELEASES" "$STORAGE_UPLOADS" "$STORAGE_DB"
-
             cp -a "/tmp/backend_bundle.tgz" "${RELEASES}/backend_bundle_${DEPLOY_SHA}_${TS}.tgz" || true
 
             cleanup(){
@@ -383,7 +391,6 @@ jobs:
             fi
 
             mkdir -p "${NEW_DIR}/public" "${NEW_DIR}/.tmp"
-
             ln -sfn "$STORAGE_UPLOADS" "${NEW_DIR}/public/uploads"
 
             if [ -f "${LIVE_DIR}/.tmp/data.db" ] && [ ! -L "${LIVE_DIR}/.tmp/data.db" ] && [ ! -f "${STORAGE_DB}/data.db" ]; then
