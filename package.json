@@ -1,0 +1,36 @@
+{
+  "name": "strapi-next-launchpad-example",
+  "version": "1.0.0",
+  "description": "Next.js Launchpad Example powered by Strapi",
+  "type": "module",
+  "scripts": {
+    "prepare": "husky",
+    "check:format": "prettier . --check --cache",
+    "fix:format": "prettier . --write --cache",
+    "fix": "npm run fix:format",
+    "lint-staged": "lint-staged"
+  },
+  "dependencies": {
+    "@types/node": "^22.5.2",
+    "concurrently": "^8.2.2",
+    "typescript": "^5.0.0",
+    "wait-on": "^8.0.1"
+  },
+  "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^5.2.2",
+    "dotenv": "^17.2.3",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.10",
+    "prettier": "^3.5.3",
+    "ts-node": "^10.9.2",
+    "uuid": "^13.0.0"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,md,yml,yaml}": [
+      "prettier --write --cache"
+    ],
+    "frontend/**/*.{js,jsx,ts,tsx}": [
+      "cd frontend && npm run lint -- --fix"
+    ]
+  }
+}
