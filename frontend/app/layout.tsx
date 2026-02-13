@@ -8,11 +8,7 @@ import { SlugProvider } from './context/SlugContext';
 import { Preview } from '@/components/preview';
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#292624' },
-    { media: '(prefers-color-scheme: dark)', color: '#292624' },
-    // #292624 variable
-  ],
+  themeColor: '#292624',
 };
 
 export async function generateStaticParams() {
