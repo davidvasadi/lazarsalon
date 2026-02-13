@@ -26,7 +26,7 @@ export const AIToast = () => {
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-900">LAZARS®</p>
           <p className="mt-1 text-sm text-gray-500">
-            Az oldal marketing alapú sütiket használ! Toast Chapter 24
+            Az oldal marketing alapú sütiket használ! Toast Chapter 25
           </p>
           <div className="mt-3">
             <a
