@@ -9,8 +9,9 @@ import { Preview } from '@/components/preview';
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#06b6d4' },
-    { media: '(prefers-color-scheme: dark)', color: '#06b6d4' },
+    { media: '(prefers-color-scheme: light)', color: '#292624' },
+    { media: '(prefers-color-scheme: dark)', color: '#292624' },
+    // #292624 variable
   ],
 };
 
