@@ -5,15 +5,15 @@ on:
     branches: [main]
     paths:
       - 'frontend/**'
-      - 'next/**'
       - 'backend/**'
+      - 'next/**'
       - 'strapi/**'
       - '.github/workflows/**'
   pull_request:
     paths:
       - 'frontend/**'
-      - 'next/**'
       - 'backend/**'
+      - 'next/**'
       - 'strapi/**'
       - '.github/workflows/**'
   workflow_dispatch:
@@ -28,8 +28,13 @@ on:
         type: boolean
         required: false
         default: false
+      deploy_cpanel:
+        description: 'LEGACY: deploy static build to cPanel (manual only)'
+        type: boolean
+        required: false
+        default: false
       smoke_path:
-        description: 'Smoke path (default: /hu)'
+        description: 'Smoke path to hit on preview (e.g. /hu)'
         type: string
         required: false
         default: '/hu'
@@ -40,10 +45,10 @@ concurrency:
 
 permissions:
   contents: read
+  actions: write
 
 env:
   NODE_VERSION: '20'
-  VERCEL_TELEMETRY_DISABLED: '1'
   SMOKE_PATH_DEFAULT: '/hu'
 
 jobs:
@@ -51,36 +56,33 @@ jobs:
     name: changes
     runs-on: ubuntu-latest
     outputs:
+      frontend_changed: ${{ steps.out.outputs.frontend_changed }}
+      backend_changed: ${{ steps.out.outputs.backend_changed }}
       frontend_dir: ${{ steps.detect.outputs.frontend_dir }}
       backend_dir: ${{ steps.detect.outputs.backend_dir }}
-      frontend_changed: ${{ steps.flags.outputs.frontend_changed }}
-      backend_changed: ${{ steps.flags.outputs.backend_changed }}
-      deploy_frontend: ${{ steps.flags.outputs.deploy_frontend }}
-      deploy_backend: ${{ steps.flags.outputs.deploy_backend }}
-      smoke_path: ${{ steps.flags.outputs.smoke_path }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Detect project dirs
+      - name: Detect project directories
         id: detect
         shell: bash
         run: |
           set -euo pipefail
-          if [ -f "next/package.json" ]; then
-            echo "frontend_dir=next" >> "$GITHUB_OUTPUT"
-          elif [ -f "frontend/package.json" ]; then
+          if [ -f "frontend/package.json" ]; then
             echo "frontend_dir=frontend" >> "$GITHUB_OUTPUT"
+          elif [ -f "next/package.json" ]; then
+            echo "frontend_dir=next" >> "$GITHUB_OUTPUT"
           else
-            echo "ERROR: cannot detect frontend dir (next/ or frontend/)" >&2
+            echo "ERROR: cannot detect frontend dir (expected frontend/ or next/)" >&2
             exit 1
           fi
 
-          if [ -f "strapi/package.json" ]; then
-            echo "backend_dir=strapi" >> "$GITHUB_OUTPUT"
-          elif [ -f "backend/package.json" ]; then
+          if [ -f "backend/package.json" ]; then
             echo "backend_dir=backend" >> "$GITHUB_OUTPUT"
+          elif [ -f "strapi/package.json" ]; then
+            echo "backend_dir=strapi" >> "$GITHUB_OUTPUT"
           else
-            echo "ERROR: cannot detect backend dir (strapi/ or backend/)" >&2
+            echo "ERROR: cannot detect backend dir (expected backend/ or strapi/)" >&2
             exit 1
           fi
 
@@ -95,49 +97,32 @@ jobs:
               - 'backend/**'
               - 'strapi/**'
 
-      - name: Decide deploy flags (safe for push/PR/manual)
-        id: flags
-        env:
-          AUTO_DEPLOY: ${{ vars.AUTO_DEPLOY }}
+      - name: Final change flags (supports manual)
+        id: out
         shell: bash
         run: |
           set -euo pipefail
-
           fe="${{ steps.filter.outputs.frontend }}"
           be="${{ steps.filter.outputs.backend }}"
 
-          deploy_frontend=false
-          deploy_backend=false
+          INPUT_FE="${{ github.event.inputs.deploy_frontend || 'false' }}"
+          INPUT_BE="${{ github.event.inputs.deploy_backend || 'false' }}"
 
-          smoke_path="${SMOKE_PATH_DEFAULT:-/hu}"
-
-          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
-            manual_fe="$(jq -r '.inputs.deploy_frontend // "false"' "$GITHUB_EVENT_PATH")"
-            manual_be="$(jq -r '.inputs.deploy_backend  // "false"' "$GITHUB_EVENT_PATH")"
-            inp_path="$(jq -r '.inputs.smoke_path // empty' "$GITHUB_EVENT_PATH")"
-            if [ -n "${inp_path:-}" ]; then smoke_path="$inp_path"; fi
-
-            if [ "${GITHUB_REF}" = "refs/heads/main" ]; then
-              if [ "$manual_fe" = "true" ]; then deploy_frontend=true; fe=true; fi
-              if [ "$manual_be" = "true" ]; then deploy_backend=true;  be=true; fi
-            fi
-          fi
-
-          auto="${AUTO_DEPLOY:-false}"
-          if [ "${GITHUB_EVENT_NAME}" = "push" ] && [ "${GITHUB_REF}" = "refs/heads/main" ] && [ "$auto" = "true" ]; then
-            if [ "$fe" = "true" ]; then deploy_frontend=true; fi
-            if [ "$be" = "true" ]; then deploy_backend=true;  fi
-          fi
-
-          if [ -n "$smoke_path" ] && [ "${smoke_path:0:1}" != "/" ]; then
-            smoke_path="/$smoke_path"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ "$INPUT_FE" = "true" ]; then fe="true"; fi
+            if [ "$INPUT_BE" = "true" ]; then be="true"; fi
           fi
 
           echo "frontend_changed=$fe" >> "$GITHUB_OUTPUT"
           echo "backend_changed=$be" >> "$GITHUB_OUTPUT"
-          echo "deploy_frontend=$deploy_frontend" >> "$GITHUB_OUTPUT"
-          echo "deploy_backend=$deploy_backend" >> "$GITHUB_OUTPUT"
-          echo "smoke_path=$smoke_path" >> "$GITHUB_OUTPUT"
+
+      - name: Summary
+        shell: bash
+        run: |
+          echo "frontend_dir=${{ steps.detect.outputs.frontend_dir }}"
+          echo "backend_dir=${{ steps.detect.outputs.backend_dir }}"
+          echo "frontend_changed=${{ steps.out.outputs.frontend_changed }}"
+          echo "backend_changed=${{ steps.out.outputs.backend_changed }}"
 
   secrets-check:
     name: secrets-check
@@ -151,6 +136,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
           vercel_ok=false
           if [ -n "${{ secrets.VERCEL_TOKEN }}" ] && [ -n "${{ secrets.VERCEL_ORG_ID }}" ] && [ -n "${{ secrets.VERCEL_PROJECT_ID }}" ]; then
             vercel_ok=true
@@ -164,7 +150,7 @@ jobs:
           echo "ssh_ok=$ssh_ok" >> "$GITHUB_OUTPUT"
 
   next-build:
-    name: next-build (sanity)
+    name: next-build
     needs: changes
     if: ${{ needs.changes.outputs.frontend_changed == 'true' }}
     runs-on: ubuntu-latest
@@ -173,16 +159,21 @@ jobs:
         working-directory: ${{ needs.changes.outputs.frontend_dir }}
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: ${{ needs.changes.outputs.frontend_dir }}/package-lock.json
-      - run: npm ci --no-audit --no-fund
-      - run: npm run build
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
 
   strapi-build:
-    name: strapi-build (bundle)
+    name: strapi-build
     needs: changes
     if: ${{ needs.changes.outputs.backend_changed == 'true' }}
     runs-on: ubuntu-latest
@@ -191,30 +182,38 @@ jobs:
         working-directory: ${{ needs.changes.outputs.backend_dir }}
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: ${{ needs.changes.outputs.backend_dir }}/package-lock.json
-      - run: npm ci --no-audit --no-fund
-      - run: npm run build
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
 
       - name: Create backend bundle (exclude uploads/env/tmp/node_modules)
         shell: bash
         run: |
           set -euo pipefail
           cd ..
-          B="${{ needs.changes.outputs.backend_dir }}"
-          rm -rf "${B}/node_modules" || true
-          tar -czf backend_bundle.tgz \
-            --exclude="${B}/public/uploads" \
-            --exclude="${B}/.env" \
-            --exclude="${B}/.env.*" \
-            --exclude="${B}/.tmp" \
-            --exclude="${B}/node_modules" \
-            "${B}"
+          BACKEND_DIR="${{ needs.changes.outputs.backend_dir }}"
 
-      - uses: actions/upload-artifact@v4
+          rm -rf "${BACKEND_DIR}/node_modules" || true
+
+          tar -czf backend_bundle.tgz \
+            --exclude="${BACKEND_DIR}/public/uploads" \
+            --exclude="${BACKEND_DIR}/.env" \
+            --exclude="${BACKEND_DIR}/.env.*" \
+            --exclude="${BACKEND_DIR}/.tmp" \
+            --exclude="${BACKEND_DIR}/node_modules" \
+            "${BACKEND_DIR}"
+
+      - name: Upload backend bundle artifact
+        uses: actions/upload-artifact@v4
         with:
           name: backend_bundle
           path: backend_bundle.tgz
@@ -226,18 +225,34 @@ jobs:
     needs: [changes, next-build, secrets-check]
     runs-on: ubuntu-latest
     if: >-
-      needs.changes.outputs.deploy_frontend == 'true' &&
+      (
+        github.event_name == 'push' &&
+        github.ref == 'refs/heads/main' &&
+        vars.AUTO_DEPLOY == 'true'
+      ) || (
+        github.event_name == 'workflow_dispatch' &&
+        github.ref == 'refs/heads/main' &&
+        github.event.inputs.deploy_frontend == 'true'
+      )
+      &&
+      needs.changes.outputs.frontend_changed == 'true' &&
       needs.next-build.result == 'success' &&
       needs.secrets-check.outputs.vercel_ok == 'true'
     env:
       FRONTEND_DIR: ${{ needs.changes.outputs.frontend_dir }}
-      SMOKE_PATH: ${{ needs.changes.outputs.smoke_path }}
+      VERCEL_TELEMETRY_DISABLED: '1'
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ env.FRONTEND_DIR }}/package-lock.json
+
+      - name: Install deps (needed for vercel build)
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npm ci --no-audit --no-fund
 
       - name: Install Vercel CLI
         run: npm i -g vercel@latest
@@ -247,93 +262,150 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: vercel whoami --token="$VERCEL_TOKEN"
 
-      # Preview deploy (Vercel builds in cloud → NO local vercel build → NO spawn npm ENOENT)
+      # ✅ PREVIEW pull + preview build + preview deploy (prebuilt)
+      # FONTOS: repo rootból fut, mert a Vercel Project Root Directory már "frontend"
       - name: Vercel Pull (preview env)
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: vercel pull --yes --environment=preview --token="$VERCEL_TOKEN" --cwd="$FRONTEND_DIR"
+        run: vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
 
-      - name: Preview Deploy + capture URL
+      - name: Vercel Build (PREVIEW prebuilt)
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: vercel build --token="$VERCEL_TOKEN"
+
+      - name: Preview Deploy (prebuilt) + capture URL
         id: preview
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
-          out="$(vercel deploy --yes --token="$VERCEL_TOKEN" --cwd="$FRONTEND_DIR")"
-          echo "$out"
-          URL="$(printf '%s\n' "$out" | grep -Eo 'https://[^ ]+\.vercel\.app' | tail -n 1)"
-          [ -n "${URL:-}" ] || { echo "ERROR: preview url not found"; exit 1; }
+          URL="$(vercel deploy --prebuilt --yes --token="$VERCEL_TOKEN" | tail -n 1)"
           echo "preview_url=$URL" >> "$GITHUB_OUTPUT"
           echo "Preview URL: $URL"
 
-      - name: Smoke test preview (2xx/3xx)
-        id: smoke
-        continue-on-error: true
-        env:
-          PREVIEW_URL: ${{ steps.preview.outputs.preview_url }}
-          VERCEL_PROTECTION_BYPASS: ${{ secrets.VERCEL_PROTECTION_BYPASS }}
+      - name: Resolve SMOKE_PATH (safe for push + manual)
         shell: bash
         run: |
-          set -Eeuo pipefail
-          base="${PREVIEW_URL%/}"
-          path="${SMOKE_PATH:-/hu}"
-          if [ -n "$path" ] && [ "${path:0:1}" != "/" ]; then path="/$path"; fi
-          url="${base}${path}"
-          echo "Smoke URL: $url"
+          set -euo pipefail
+          SMOKE_PATH="${SMOKE_PATH_DEFAULT:-/hu}"
 
-          hdr=()
-          if [ -n "${VERCEL_PROTECTION_BYPASS:-}" ]; then
-            hdr=(-H "x-vercel-protection-bypass: ${VERCEL_PROTECTION_BYPASS}")
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            INPUT_PATH="$(node -e "const e=require(process.env.GITHUB_EVENT_PATH); process.stdout.write((e.inputs && e.inputs.smoke_path) ? String(e.inputs.smoke_path) : '')" || true)"
+            if [ -n "$INPUT_PATH" ]; then SMOKE_PATH="$INPUT_PATH"; fi
           fi
 
+          echo "SMOKE_PATH=$SMOKE_PATH" >> "$GITHUB_ENV"
+          echo "Using SMOKE_PATH=$SMOKE_PATH"
+
+      - name: Smoke test preview (must be 2xx/3xx)
+        env:
+          PREVIEW_URL: ${{ steps.preview.outputs.preview_url }}
+          # Optional: if Vercel Deployment Protection is enabled, set this secret in GitHub
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          base="${PREVIEW_URL}"
+          [ -n "$base" ] || { echo "Missing preview URL"; exit 1; }
+
+          base="${base%/}"
+          path="${SMOKE_PATH:-/}"
+          if [[ "$path" != /* ]]; then path="/$path"; fi
+          target="${base}${path}"
+
+          target_q="$target"
+          if [ -n "${VERCEL_AUTOMATION_BYPASS_SECRET:-}" ]; then
+            if [[ "$target_q" == *\?* ]]; then
+              target_q="${target_q}&x-vercel-protection-bypass=${VERCEL_AUTOMATION_BYPASS_SECRET}"
+            else
+              target_q="${target_q}?x-vercel-protection-bypass=${VERCEL_AUTOMATION_BYPASS_SECRET}"
+            fi
+          fi
+
+          hdrs=(-H "accept: text/html" -H "user-agent: github-actions-smoke")
+          if [ -n "${VERCEL_AUTOMATION_BYPASS_SECRET:-}" ]; then
+            hdrs+=(-H "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}")
+            hdrs+=(-H "x-vercel-set-bypass-cookie: true")
+          fi
+
+          echo "Smoke target: $target"
+          echo "Smoke target (query bypass): $target_q"
+
+          try_url () {
+            local url="$1"
+            curl -sS -o /dev/null -w "%{http_code}" -L --connect-timeout 8 --max-time 30 "${hdrs[@]}" "$url" || echo 000
+          }
+
           ok=0
+          last=000
+
           for i in 1 2 3 4 5; do
-            code="$(curl -sS -o /tmp/smoke_body.txt -w "%{http_code}" -L \
-              --connect-timeout 5 --max-time 25 "${hdr[@]}" "$url" || echo 000)"
-            echo "try=$i code=$code"
+            code="$(try_url "$target")"
+            last="$code"
+            echo "try=$i code=$code url=$target"
             if [ "$code" -ge 200 ] && [ "$code" -lt 400 ]; then ok=1; break; fi
             sleep 2
           done
 
+          if [ "$ok" -ne 1 ] && [ -n "${VERCEL_AUTOMATION_BYPASS_SECRET:-}" ]; then
+            for i in 1 2 3 4 5; do
+              code="$(try_url "$target_q")"
+              last="$code"
+              echo "tryQ=$i code=$code url=$target_q"
+              if [ "$code" -ge 200 ] && [ "$code" -lt 400 ]; then ok=1; break; fi
+              sleep 2
+            done
+          fi
+
           if [ "$ok" -ne 1 ]; then
-            echo "Smoke failed -> STOP (no prod)"
-            sed -n '1,120p' /tmp/smoke_body.txt || true
+            echo "Smoke failed (last code=$last). Debug headers+body (first 60 lines):"
+            echo "---- RESPONSE HEADERS ----"
+            curl -sS -D - -o /tmp/smoke_body.txt -L --connect-timeout 8 --max-time 30 "${hdrs[@]}" "$target_q" | head -n 80 || true
+            echo "---- BODY (first 60 lines) ----"
+            head -n 60 /tmp/smoke_body.txt || true
+            echo "--------------------------"
             exit 1
           fi
 
-      - name: Dump Vercel logs on smoke failure (last 10m)
-        if: steps.smoke.outcome != 'success'
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          PREVIEW_URL: ${{ steps.preview.outputs.preview_url }}
-        run: vercel logs "$PREVIEW_URL" --since=10m --token="$VERCEL_TOKEN" || true
-
-      - name: Fail job if smoke failed
-        if: steps.smoke.outcome != 'success'
-        run: exit 1
-
-      # Production deploy (cloud build)
+      # ✅ PROD pull + prod build + prod deploy (prebuilt)
       - name: Vercel Pull (production env)
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN" --cwd="$FRONTEND_DIR"
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
 
-      - name: Production Deploy
+      - name: Vercel Build (PROD prebuilt)
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: vercel deploy --prod --yes --token="$VERCEL_TOKEN" --cwd="$FRONTEND_DIR"
+        run: vercel build --prod --token="$VERCEL_TOKEN"
+
+      - name: Vercel Deploy (PROD prebuilt)
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: vercel deploy --prebuilt --prod --yes --token="$VERCEL_TOKEN"
 
   deploy-backend-to-vps:
     name: deploy-backend-to-vps
     needs: [changes, strapi-build, secrets-check]
     runs-on: ubuntu-latest
     if: >-
-      needs.changes.outputs.deploy_backend == 'true' &&
+      (
+        github.event_name == 'push' &&
+        github.ref == 'refs/heads/main' &&
+        vars.AUTO_DEPLOY == 'true'
+      ) || (
+        github.event_name == 'workflow_dispatch' &&
+        github.ref == 'refs/heads/main' &&
+        github.event.inputs.deploy_backend == 'true'
+      )
+      &&
+      needs.changes.outputs.backend_changed == 'true' &&
       needs.strapi-build.result == 'success' &&
       needs.secrets-check.outputs.ssh_ok == 'true'
     steps:
@@ -384,16 +456,35 @@ jobs:
 
             log(){ printf '[%s] %s\n' "$(date -Is)" "$*"; }
 
+            [ -n "${DEPLOY_SHA:-}" ] || { log "DEPLOY_SHA missing"; exit 1; }
+            [ -n "${BUNDLE_DIR:-}" ] || { log "BUNDLE_DIR missing"; exit 1; }
+
+            command -v flock >/dev/null 2>&1 || { log "flock missing"; exit 1; }
             exec 9>"$LOCK_FILE"
-            flock -n 9 || { log "Another deploy running -> exit 0"; exit 0; }
+            if ! flock -n 9; then
+              log "Another deploy is running -> exit 0"
+              exit 0
+            fi
 
             mkdir -p "$RELEASES" "$STORAGE_UPLOADS" "$STORAGE_DB"
+
             cp -a "/tmp/backend_bundle.tgz" "${RELEASES}/backend_bundle_${DEPLOY_SHA}_${TS}.tgz" || true
 
-            rm -rf "$TMP_DIR" "$NEW_DIR" 2>/dev/null || true
-            mkdir -p "$TMP_DIR" "$NEW_DIR"
+            cleanup(){
+              rm -rf "$TMP_DIR" 2>/dev/null || true
+              if [ -d "$NEW_DIR" ] && [ "$(readlink -f "$NEW_DIR" || true)" != "$(readlink -f "$LIVE_DIR" || true)" ]; then
+                rm -rf "$NEW_DIR" 2>/dev/null || true
+              fi
+            }
+            trap cleanup EXIT
+
+            rm -rf "$TMP_DIR" 2>/dev/null || true
+            mkdir -p "$TMP_DIR"
             tar -xzf /tmp/backend_bundle.tgz -C "$TMP_DIR"
             rm -f /tmp/backend_bundle.tgz
+
+            rm -rf "$NEW_DIR" 2>/dev/null || true
+            mkdir -p "$NEW_DIR"
 
             rsync -a --delete \
               --exclude 'public/uploads/' \
@@ -403,34 +494,46 @@ jobs:
               --exclude 'node_modules' \
               "${TMP_DIR}/${BUNDLE_DIR}/" "${NEW_DIR}/"
 
-            [ -f "${LIVE_DIR}/.env" ] && cp -a "${LIVE_DIR}/.env" "${NEW_DIR}/.env" || true
+            if [ -f "${LIVE_DIR}/.env" ]; then
+              cp -a "${LIVE_DIR}/.env" "${NEW_DIR}/.env"
+            fi
 
             mkdir -p "${NEW_DIR}/public" "${NEW_DIR}/.tmp"
+
             ln -sfn "$STORAGE_UPLOADS" "${NEW_DIR}/public/uploads"
 
             if [ -f "${LIVE_DIR}/.tmp/data.db" ] && [ ! -L "${LIVE_DIR}/.tmp/data.db" ] && [ ! -f "${STORAGE_DB}/data.db" ]; then
               mv "${LIVE_DIR}/.tmp/data.db" "${STORAGE_DB}/data.db" || true
             fi
-            [ -f "${STORAGE_DB}/data.db" ] || { touch "${STORAGE_DB}/data.db"; chmod 600 "${STORAGE_DB}/data.db" || true; }
+            if [ ! -f "${STORAGE_DB}/data.db" ]; then
+              touch "${STORAGE_DB}/data.db"
+              chmod 600 "${STORAGE_DB}/data.db" || true
+            fi
             ln -sfn "${STORAGE_DB}/data.db" "${NEW_DIR}/.tmp/data.db"
 
             cd "$NEW_DIR"
             npm ci --omit=dev
 
+            log "Stopping strapi..."
             pm2 stop strapi || true
-            if [ -d "$LIVE_DIR" ]; then mv "$LIVE_DIR" "$PREV_DIR"; fi
+
+            if [ -d "$LIVE_DIR" ]; then
+              mv "$LIVE_DIR" "$PREV_DIR"
+            fi
             mv "$NEW_DIR" "$LIVE_DIR"
+
+            log "Restarting strapi..."
             pm2 restart strapi --update-env
 
-            ok=0
+            smoke_ok=0
             for i in 1 2 3 4 5 6 7 8 9 10; do
               code="$(curl -sS -o /dev/null -w "%{http_code}" -L --connect-timeout 3 --max-time 10 "http://127.0.0.1:1337/admin" || echo 000)"
               log "smoke try=$i admin_code=$code"
-              if [ "$code" -ge 200 ] && [ "$code" -lt 400 ]; then ok=1; break; fi
+              if [ "$code" -ge 200 ] && [ "$code" -lt 400 ]; then smoke_ok=1; break; fi
               sleep 2
             done
 
-            if [ "$ok" -ne 1 ]; then
+            if [ "$smoke_ok" -ne 1 ]; then
               log "SMOKE FAIL -> ROLLBACK"
               pm2 stop strapi || true
               if [ -d "$PREV_DIR" ]; then
@@ -442,4 +545,65 @@ jobs:
             fi
 
             ls -dt "${APP_ROOT}/backend.prev_"* 2>/dev/null | tail -n +4 | xargs -r rm -rf || true
+
             log "DEPLOY DONE ✅"
+
+  cpanel-deploy:
+    name: cpanel-deploy (legacy manual)
+    needs: changes
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.deploy_cpanel == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: LEGACY NOTICE
+        run: |
+          echo "This is a legacy cPanel deploy. If frontend is now Next+Vercel, you likely don't need this."
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ needs.changes.outputs.frontend_dir }}/package-lock.json
+
+      - name: Install & build (legacy expects Vite dist/)
+        working-directory: ${{ needs.changes.outputs.frontend_dir }}
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: Upload dist to temp folder on cPanel
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.CPANEL_HOST }}
+          username: ${{ secrets.CPANEL_USER }}
+          password: ${{ secrets.CPANEL_PASSWORD }}
+          port: ${{ secrets.CPANEL_PORT }}
+          source: '${{ needs.changes.outputs.frontend_dir }}/dist/**'
+          target: '/home/${{ secrets.CPANEL_USER }}/tmp/frontend_deploy'
+          strip_components: 2
+          overwrite: true
+
+      - name: Activate new frontend build (safe replace)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.CPANEL_HOST }}
+          username: ${{ secrets.CPANEL_USER }}
+          password: ${{ secrets.CPANEL_PASSWORD }}
+          port: ${{ secrets.CPANEL_PORT }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            TARGET="${{ secrets.CPANEL_TARGET_DIR }}"
+            USER="${{ secrets.CPANEL_USER }}"
+            TMP="/home/${USER}/tmp/frontend_deploy"
+            [ -d "$TMP" ] || { echo "ERROR: temp deploy folder not found: $TMP"; exit 1; }
+            cd "$TARGET"
+            rm -rf assets icons || true
+            cp -a "$TMP/." "$TARGET/"
+            rm -rf "$TMP"
+            echo "✅ Frontend deployed to: $TARGET"
