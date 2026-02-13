@@ -1,7 +1,7 @@
 // app/api/google-reviews/route.ts
 import { NextResponse } from 'next/server';
 
-export const revalidate = 600; // 12 óra cache (Next/Vercel)
+export const revalidate = 43200; // 12 óra cache (Next/Vercel)
 
 export async function GET() {
   const apiKey =

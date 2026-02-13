@@ -1,7 +1,7 @@
 // app/robots.txt/route.ts
 import { NextResponse } from 'next/server';
 
-export const revalidate = 600; // 12 óra
+export const revalidate = 43200; // 12 óra
 
 function stripSlash(u: string) {
   return u.replace(/\/$/, '');
