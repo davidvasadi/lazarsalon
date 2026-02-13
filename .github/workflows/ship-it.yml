@@ -33,6 +33,11 @@ on:
         type: boolean
         required: false
         default: false
+      smoke_path:
+        description: 'Path to smoke test on preview (e.g. /hu)'
+        type: string
+        required: false
+        default: '/hu'
 
 concurrency:
   group: ship-it-${{ github.ref }}
@@ -40,10 +45,11 @@ concurrency:
 
 permissions:
   contents: read
-  actions: write
 
 env:
   NODE_VERSION: '20'
+  VERCEL_TELEMETRY_DISABLED: '1'
+  SMOKE_PATH_DEFAULT: '/hu'
 
 jobs:
   changes:
@@ -232,9 +238,11 @@ jobs:
       needs.changes.outputs.frontend_changed == 'true' &&
       needs.next-build.result == 'success' &&
       needs.secrets-check.outputs.vercel_ok == 'true'
+    defaults:
+      run:
+        working-directory: ${{ needs.changes.outputs.frontend_dir }}
     env:
       FRONTEND_DIR: ${{ needs.changes.outputs.frontend_dir }}
-      VERCEL_TELEMETRY_DISABLED: '1'
     steps:
       - uses: actions/checkout@v4
 
@@ -245,7 +253,6 @@ jobs:
           cache-dependency-path: ${{ env.FRONTEND_DIR }}/package-lock.json
 
       - name: Install deps (needed for vercel build)
-        working-directory: ${{ env.FRONTEND_DIR }}
         run: npm ci --no-audit --no-fund
 
       - name: Install Vercel CLI
@@ -256,8 +263,6 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: vercel whoami --token="$VERCEL_TOKEN"
 
-      # ✅ PREVIEW pull + preview build + preview deploy (prebuilt)
-      # FONTOS: repo rootból fut, mert a Vercel Project Root Directory már "frontend"
       - name: Vercel Pull (preview env)
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -277,30 +282,76 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          URL="$(vercel deploy --prebuilt --yes --token="$VERCEL_TOKEN" | tail -n 1)"
+          out="$(vercel deploy --prebuilt --yes --token="$VERCEL_TOKEN")"
+          echo "$out"
+          # prefer the *.vercel.app URL
+          URL="$(printf '%s\n' "$out" | grep -Eo 'https://[^ ]+\.vercel\.app' | tail -n 1)"
+          if [ -z "${URL:-}" ]; then
+            URL="$(printf '%s\n' "$out" | grep -Eo 'https://[^ ]+' | tail -n 1)"
+          fi
+          [ -n "${URL:-}" ] || { echo "ERROR: could not capture preview url"; exit 1; }
           echo "preview_url=$URL" >> "$GITHUB_OUTPUT"
           echo "Preview URL: $URL"
 
       - name: Smoke test preview (must be 2xx/3xx)
+        id: smoke
+        continue-on-error: true
         env:
           PREVIEW_URL: ${{ steps.preview.outputs.preview_url }}
+          VERCEL_PROTECTION_BYPASS: ${{ secrets.VERCEL_PROTECTION_BYPASS }}
         shell: bash
         run: |
-          set -euo pipefail
-          url="${PREVIEW_URL}"
-          [ -n "$url" ] || { echo "Missing preview URL"; exit 1; }
+          set -Eeuo pipefail
+
+          # --- resolve SMOKE_PATH safely for all event types ---
+          path="${SMOKE_PATH_DEFAULT:-/hu}"
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            inp="$(jq -r '.inputs.smoke_path // empty' "$GITHUB_EVENT_PATH" || true)"
+            if [ -n "${inp:-}" ]; then path="$inp"; fi
+          fi
+          if [ -n "$path" ] && [ "${path:0:1}" != "/" ]; then
+            path="/$path"
+          fi
+          # -----------------------------------------------------
+
+          base="${PREVIEW_URL%/}"
+          url="${base}${path}"
+
+          echo "PREVIEW_URL=$PREVIEW_URL"
+          echo "Resolved SMOKE_PATH=$path"
+          echo "Smoke URL: $url"
+
+          hdr=()
+          if [ -n "${VERCEL_PROTECTION_BYPASS:-}" ]; then
+            hdr=(-H "x-vercel-protection-bypass: ${VERCEL_PROTECTION_BYPASS}")
+          fi
 
           ok=0
           for i in 1 2 3 4 5; do
-            code="$(curl -sS -o /dev/null -w "%{http_code}" -L --connect-timeout 5 --max-time 20 "$url" || echo 000)"
+            code="$(curl -sS -o /tmp/smoke_body.txt -w "%{http_code}" -L \
+              --connect-timeout 5 --max-time 20 "${hdr[@]}" "$url" || echo 000)"
             echo "try=$i code=$code url=$url"
             if [ "$code" -ge 200 ] && [ "$code" -lt 400 ]; then ok=1; break; fi
             sleep 2
           done
-          [ "$ok" -eq 1 ] || { echo "Preview smoke failed -> STOP (no prod deploy)"; exit 1; }
 
-      # ✅ PROD pull + prod build + prod deploy (prebuilt)
+          if [ "$ok" -ne 1 ]; then
+            echo "Preview smoke failed -> STOP (no prod deploy)"
+            sed -n '1,120p' /tmp/smoke_body.txt || true
+            exit 1
+          fi
+
+
+      - name: Dump Vercel logs on smoke failure (last 5m)
+        if: steps.smoke.outcome != 'success'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          PREVIEW_URL: ${{ steps.preview.outputs.preview_url }}
+        run: |
+          vercel logs "$PREVIEW_URL" --since=5m --token="$VERCEL_TOKEN" || true
+
       - name: Vercel Pull (production env)
+        if: steps.smoke.outcome == 'success'
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -308,15 +359,20 @@ jobs:
         run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
 
       - name: Vercel Build (PROD prebuilt)
+        if: steps.smoke.outcome == 'success'
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: vercel build --prod --token="$VERCEL_TOKEN"
 
       - name: Vercel Deploy (PROD prebuilt)
+        if: steps.smoke.outcome == 'success'
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: vercel deploy --prebuilt --prod --yes --token="$VERCEL_TOKEN"
 
+      - name: Fail job if smoke failed
+        if: steps.smoke.outcome != 'success'
+        run: exit 1
 
   deploy-backend-to-vps:
     name: deploy-backend-to-vps
