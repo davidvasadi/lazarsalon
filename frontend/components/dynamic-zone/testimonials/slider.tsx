@@ -1,156 +1,297 @@
+// components/dynamic-zone/testimonials/slider.tsx
 'use client';
 
-import { Transition } from '@headlessui/react';
-import { memo, useEffect, useRef, useState } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
+import { Star } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
-import { SparklesCore } from '../../ui/sparkles';
-import { StrapiImage } from '@/components/ui/strapi-image';
+import type { UITestimonial } from './index';
 import { cn } from '@/lib/utils';
 
-export const TestimonialsSlider = ({ testimonials }: { testimonials: any }) => {
-  const [active, setActive] = useState<number>(0);
-  const [autorotate, setAutorotate] = useState<boolean>(true);
-  const testimonialsRef = useRef<HTMLDivElement>(null);
+// components/dynamic-zone/testimonials/slider.tsx
 
-  const slicedTestimonials = testimonials.slice(0, 3);
+const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
-  useEffect(() => {
-    if (!autorotate) return;
-    const interval = setInterval(() => {
-      setActive(
-        active + 1 === slicedTestimonials.length ? 0 : (active) => active + 1
-      );
-    }, 7000);
-    return () => clearInterval(interval);
-  }, [active, autorotate, slicedTestimonials.length]);
+function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n));
+}
 
-  const heightFix = () => {
-    if (testimonialsRef.current && testimonialsRef.current.parentElement)
-      testimonialsRef.current.parentElement.style.height = `${testimonialsRef.current.clientHeight}px`;
+function isNoDragTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  // bármi interaktív (button/a/input/…) vagy explicit data-no-drag
+  return !!target.closest(
+    '[data-no-drag],button,a,input,textarea,select,option,label'
+  );
+}
+
+export const TestimonialsSlider = ({
+  testimonials,
+}: {
+  testimonials: UITestimonial[];
+}) => {
+  const reduce = useReducedMotion();
+  const items = useMemo(
+    () => (Array.isArray(testimonials) ? testimonials : []),
+    [testimonials]
+  );
+
+  const trackRef = useRef<HTMLDivElement>(null);
+
+  const [active, setActive] = useState(0);
+  const [autorotate, setAutorotate] = useState(true);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  const drag = useRef({
+    isDown: false,
+    startX: 0,
+    startScrollLeft: 0,
+    pointerId: -1,
+    moved: false,
+  });
+
+  const scrollToIndex = (idx: number) => {
+    const track = trackRef.current;
+    if (!track) return;
+    const child = track.children.item(idx) as HTMLElement | null;
+    if (!child) return;
+    track.scrollTo({ left: child.offsetLeft, behavior: 'smooth' });
   };
 
+  // autoplay
   useEffect(() => {
-    heightFix();
+    if (!autorotate) return;
+    if (items.length <= 1) return;
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        heightFix();
+    const t = setInterval(() => {
+      setActive((prev) => {
+        const next = prev + 1 >= items.length ? 0 : prev + 1;
+        requestAnimationFrame(() => scrollToIndex(next));
+        return next;
+      });
+    }, 5200);
+
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autorotate, items.length]);
+
+  // active sync scroll-snap alapján
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    const onScroll = () => {
+      const children = Array.from(track.children) as HTMLElement[];
+      if (!children.length) return;
+
+      const left = track.scrollLeft;
+      let best = 0;
+      let bestDist = Number.POSITIVE_INFINITY;
+
+      for (let i = 0; i < children.length; i++) {
+        const d = Math.abs(children[i].offsetLeft - left);
+        if (d < bestDist) {
+          bestDist = d;
+          best = i;
+        }
       }
+      setActive(best);
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    track.addEventListener('scroll', onScroll, { passive: true });
+    return () => track.removeEventListener('scroll', onScroll);
+  }, [items.length]);
 
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
+  const toggleExpand = (key: string) => {
+    setExpanded((p) => ({ ...p, [key]: !p[key] }));
+    setAutorotate(false);
+  };
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    // ✅ ha gombra/linkre kattintunk: NEM dragolunk, így a click működik
+    if (isNoDragTarget(e.target)) return;
+
+    const el = trackRef.current;
+    if (!el) return;
+
+    setAutorotate(false);
+
+    drag.current.isDown = true;
+    drag.current.moved = false;
+    drag.current.startX = e.clientX;
+    drag.current.startScrollLeft = el.scrollLeft;
+    drag.current.pointerId = e.pointerId;
+
+    try {
+      el.setPointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = trackRef.current;
+    if (!el) return;
+    if (!drag.current.isDown) return;
+    if (drag.current.pointerId !== e.pointerId) return;
+
+    const dx = e.clientX - drag.current.startX;
+    if (Math.abs(dx) > 3) drag.current.moved = true; // kis küszöb, hogy click ne vesszen el
+    el.scrollLeft = drag.current.startScrollLeft - dx;
+  };
+
+  const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = trackRef.current;
+    if (!el) return;
+
+    if (drag.current.pointerId === e.pointerId) {
+      drag.current.isDown = false;
+      drag.current.pointerId = -1;
+      try {
+        el.releasePointerCapture(e.pointerId);
+      } catch {
+        // ignore
+      }
+    }
+  };
+
+  if (!items.length) {
+    return (
+      <div className="rounded-3xl border border-charcoal bg-white p-8 text-secondary/60">
+        Még nincs megjeleníthető vélemény.
+      </div>
+    );
+  }
 
   return (
-    <section>
-      <div className="max-w-3xl mx-auto  relative z-30 h-80">
-        <div className="relative pb-12 md:pb-20">
-          {/* Particles animation */}
-          <div className="absolute left-1/2 -translate-x-1/2 -top-2 -z-10 w-80 h-20 -mt-6">
-            <MemoizedSparklesCore
-              id="new-particles"
-              background="transparent"
-              minSize={0.4}
-              maxSize={1}
-              particleDensity={100}
-              className="w-full h-full"
-              particleColor="#FFFFFF"
-            />
-          </div>
+    <motion.div
+      initial={reduce ? false : { opacity: 0, y: 10, filter: 'blur(10px)' }}
+      whileInView={
+        reduce ? undefined : { opacity: 1, y: 0, filter: 'blur(0px)' }
+      }
+      viewport={{ once: false, amount: 0.25 }}
+      transition={{ duration: 0.7, ease: EASE }}
+      className="w-full"
+    >
+      <div
+        ref={trackRef}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        className={cn(
+          'flex gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory',
+          'pb-4 select-none',
+          'cursor-grab active:cursor-grabbing',
+          '[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'
+        )}
+        style={{ touchAction: 'pan-y' }}
+      >
+        {items.map((r, idx) => {
+          const isExpanded = !!expanded[r.key];
+          const text = r.text ?? '';
+          const preview = text.length > 120 ? `${text.slice(0, 120)}…` : text;
 
-          {/* Carousel */}
-          <div className="text-center">
-            {/* Testimonial image */}
-            <div className="relative h-40 [mask-image:_linear-gradient(0deg,transparent,#FFFFFF_30%,#FFFFFF)] md:[mask-image:_linear-gradient(0deg,transparent,#FFFFFF_40%,#FFFFFF)]">
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[480px] h-[480px] -z-10 pointer-events-none before:rounded-full rounded-full before:absolute before:inset-0 before:bg-gradient-to-b before:from-neutral-400/20 before:to-transparent before:to-20% after:rounded-full after:absolute after:inset-0 after:bg-neutral-900 after:m-px before:-z-20 after:-z-20">
-                {slicedTestimonials.map((item: any, index: number) => (
-                  <Transition
-                    key={index}
-                    show={active === index}
-                    enter="transition ease-&lsqb;cubic-bezier(0.68,-0.3,0.32,1)&rsqb; duration-700 order-first"
-                    enterFrom="opacity-0 -translate-x-20"
-                    enterTo="opacity-100 translate-x-0"
-                    leave="transition ease-&lsqb;cubic-bezier(0.68,-0.3,0.32,1)&rsqb; duration-700"
-                    leaveFrom="opacity-100 translate-x-0"
-                    leaveTo="opacity-0 translate-x-20"
-                    beforeEnter={() => heightFix()}
-                  >
-                    <div className="absolute inset-0 h-full -z-10">
-                      <StrapiImage
-                        className="relative top-11 left-1/2 -translate-x-1/2 rounded-full"
-                        src={item.user.image.url}
-                        width={56}
-                        height={56}
-                        alt={`${item.user.firstname} ${item.user.lastname}`}
+          const isActive = idx === active;
+
+          return (
+            <div
+              key={r.key}
+              className={cn(
+                'snap-start shrink-0',
+                'basis-full md:basis-[calc(50%-12px)]'
+              )}
+            >
+              <div className="group h-full bg-white rounded-2xl p-7 md:p-8 shadow-sm hover:shadow-md transition-all duration-500 border border-charcoal/40 flex flex-col">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="relative">
+                    <div className="h-14 w-14 rounded-full overflow-hidden aspect-square bg-charcoal/10">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={r.avatarUrl || '/default-avatar.png'}
+                        alt={r.name}
+                        className={cn(
+                          'h-full w-full object-cover transition-all duration-500',
+                          'grayscale',
+                          'group-hover:grayscale-0',
+                          isActive ? 'grayscale-0' : ''
+                        )}
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                        draggable={false}
                       />
                     </div>
-                  </Transition>
-                ))}
-              </div>
-            </div>
-            {/* Text */}
-            <div className="mb-10 transition-all duration-150 delay-300 ease-in-out px-8 sm:px-6">
-              <div className="relative flex flex-col" ref={testimonialsRef}>
-                {slicedTestimonials.map((item: any, index: number) => (
-                  <Transition
-                    key={index}
-                    show={active === index}
-                    enter="transition ease-in-out duration-500 delay-200 order-first"
-                    enterFrom="opacity-0 -translate-x-4"
-                    enterTo="opacity-100 translate-x-0"
-                    leave="transition ease-out duration-300 delay-300 absolute"
-                    leaveFrom="opacity-100 translate-x-0"
-                    leaveTo="opacity-0 translate-x-4"
-                    beforeEnter={() => heightFix()}
-                  >
-                    <div className="text-base md:text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-neutral-200/60 via-neutral-200 to-neutral-200/60">
-                      {item.text}
+
+                    {/* muted kör + fehér csillag (ahogy “a jobb volt”) */}
+                    <div className="absolute -bottom-1 -right-1 rounded-full bg-muted p-1">
+                      <Star
+                        className="h-3 w-3 text-white fill-white"
+                        strokeWidth={1.2}
+                      />
                     </div>
-                  </Transition>
-                ))}
+                  </div>
+
+                  <div className="min-w-0">
+                    <div className="font-medium text-secondary truncate">
+                      {r.name}
+                    </div>
+                    <div className="text-sm text-secondary/60 flex items-center gap-2">
+                      {r.publishedAtLabel ? (
+                        <span className="truncate">{r.publishedAtLabel}</span>
+                      ) : null}
+                      {r.job ? (
+                        <>
+                          <span className="text-secondary/30">•</span>
+                          <span className="truncate">{r.job}</span>
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex-grow">
+                  <p className="text-secondary/90 leading-relaxed">
+                    {isExpanded ? text : preview}
+                  </p>
+                </div>
+
+                {text.length > 120 ? (
+                  <button
+                    type="button"
+                    data-no-drag
+                    onClick={() => toggleExpand(r.key)}
+                    className="mt-4 flex justify-start text-sm font-medium text-muted hover:opacity-70 transition-opacity duration-300"
+                  >
+                    {isExpanded ? 'Bezárom' : 'Tovább olvasom'}
+                  </button>
+                ) : null}
               </div>
             </div>
-            {/* Buttons */}
-            <div className="flex flex-wrap justify-center -m-1.5 px-8 sm:px-6">
-              {slicedTestimonials.map((item: any, index: number) => (
-                <button
-                  className={cn(
-                    `px-2 py-1 rounded-full m-1.5 text-xs border border-transparent text-neutral-300 transition duration-150 ease-in-out [background:linear-gradient(theme(colors.neutral.900),_theme(colors.neutral.900))_padding-box,_conic-gradient(theme(colors.neutral.400),_theme(colors.neutral.700)_25%,_theme(colors.neutral.700)_75%,_theme(colors.neutral.400)_100%)_border-box] relative before:absolute before:inset-0 before:bg-neutral-800/30 before:rounded-full before:pointer-events-none ${
-                      active === index
-                        ? 'border-secondary/50'
-                        : 'border-transparent opacity-70'
-                    }`
-                  )}
-                  key={index}
-                  onClick={() => {
-                    setActive(index);
-                    setAutorotate(false);
-                  }}
-                >
-                  <span className="relative">
-                    <span className="text-neutral-50 font-bold">
-                      {item.user.firstname + item.user.lastname}
-                    </span>{' '}
-                    <br className="block sm:hidden" />
-                    <span className="text-neutral-600 hidden sm:inline-block">
-                      -
-                    </span>{' '}
-                    <span className="hidden sm:inline-block">
-                      {item.user.job}
-                    </span>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+          );
+        })}
       </div>
-    </section>
+
+      <div className="mt-5 flex justify-center gap-2">
+        {items.map((_, i) => (
+          <button
+            key={`dot-${i}`}
+            type="button"
+            data-no-drag
+            aria-label={`Ugrás a(z) ${i + 1}. véleményre`}
+            onClick={() => {
+              setAutorotate(false);
+              const idx = clamp(i, 0, items.length - 1);
+              setActive(idx);
+              scrollToIndex(idx);
+            }}
+            className={cn(
+              'h-2.5 w-2.5 rounded-full transition-all',
+              i === active
+                ? 'bg-muted scale-110'
+                : 'bg-secondary/30 hover:bg-secondary/50'
+            )}
+          />
+        ))}
+      </div>
+    </motion.div>
   );
 };
-
-const MemoizedSparklesCore = memo(SparklesCore);
