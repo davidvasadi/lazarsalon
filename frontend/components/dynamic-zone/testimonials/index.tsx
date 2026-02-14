@@ -13,6 +13,8 @@ import { TestimonialsSlider } from './slider';
 
 // components/dynamic-zone/testimonials/index.tsx
 
+// components/dynamic-zone/testimonials/index.tsx
+
 type StrapiTestimonial = {
   id?: number | string;
   text?: string | null;
@@ -429,8 +431,7 @@ export const Testimonials = ({
                       </>
                     ) : (
                       <span className="text-secondary/60">
-                        Google értékelések: nincs konfigurálva / nincs adat
-                        (Strapi megy tovább)
+                        4.9 / 5.0 értékelés alapján
                       </span>
                     )}
                   </div>
