@@ -362,7 +362,7 @@ function AvatarStrip({ avatar }: { avatar: Avatar }) {
           alt={mediaAlt(avatar?.image, name)}
           fill
           sizes="56px"
-          className="object-cover"
+          className="object-cover object-top"
         />
       </div>
 
