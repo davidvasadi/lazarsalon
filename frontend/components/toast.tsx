@@ -32,10 +32,18 @@ export const AIToast = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    // ha már döntött, ne mutasd
     try {
       const v = localStorage.getItem(CONSENT_KEY);
-      if (v === 'granted' || v === 'denied') return;
+
+      // ✅ ha már döntött, azonnal alkalmazzuk (nem csak elrejtjük)
+      if (v === 'granted') {
+        updateGtagConsent(true);
+        return;
+      }
+      if (v === 'denied') {
+        updateGtagConsent(false);
+        return;
+      }
     } catch {}
 
     const t = window.setTimeout(() => setIsOpen(true), 2000);
