@@ -28,6 +28,8 @@ import { cn } from '@/lib/utils';
 
 // mobile-navbar.tsx
 
+// mobile-navbar.tsx
+
 const STRAPI_BASE = (
   process.env.NEXT_PUBLIC_STRAPI_URL ??
   process.env.NEXT_PUBLIC_API_URL ??
@@ -1017,7 +1019,9 @@ export function UnifiedNavbar({
                 <Link
                   href={navHref(locale, '/')}
                   className={cn(
-                    'inline-flex items-center text-base font-semibold tracking-wide',
+                    'inline-flex items-center text-base font-thin ',
+                    'md:leading-tight tracking-tight',
+                    'font-medium',
                     toggleColorClass
                   )}
                 >

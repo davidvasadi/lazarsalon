@@ -27,7 +27,7 @@ export const Heading = ({
   return (
     <Tag
       className={cn(
-        'text-3xl md:text-5xl md:leading-tight max-w-5xl text-lefttracking-tight',
+        'text-3xl md:text-5xl md:leading-tight max-w-5xl text-left tracking-tight',
         'font-medium',
         'text-lightblack',
         // 'bg-clip-text text-transparent bg-gradient-to-b from-neutral-800 via-white to-white',
