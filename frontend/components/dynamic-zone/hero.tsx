@@ -51,6 +51,25 @@ const toAbs = (u?: string | null) => {
 };
 
 /* ──────────────────────────────────────────────────────────────
+  URL helpers (same behavior as CTA component)
+────────────────────────────────────────────────────────────── */
+function isExternalUrl(url?: string | null) {
+  const u = (url ?? '').trim();
+  if (!u) return false;
+  if (u.startsWith('#')) return false; // anchor is internal
+  return /^(https?:)?\/\//i.test(u) || /^(mailto:|tel:)/i.test(u);
+}
+
+function joinLocaleHref(locale: string, url?: string | null) {
+  const u = (url ?? '').trim();
+  if (!u) return `/${locale}`;
+  if (u.startsWith('#')) return u; // allow in-page anchors
+  if (isExternalUrl(u)) return u; // absolute/external stays as-is
+  const path = u.startsWith('/') ? u : `/${u}`;
+  return `/${locale}${path}`.replace(/\/{2,}/g, '/');
+}
+
+/* ──────────────────────────────────────────────────────────────
   Tiny icons (avoid lucide export mismatch)
 ────────────────────────────────────────────────────────────── */
 function StarGlyph(props: React.SVGProps<SVGSVGElement>) {
@@ -159,11 +178,6 @@ export const Hero = ({
   const imgSrc = toAbs(preferred);
   const hasImage = Boolean(imgSrc);
   const imgAlt = image?.alternativeText || heading || 'Hero image';
-
-  const withLocale = (url: string) => {
-    const path = url?.startsWith('/') ? url : `/${url || ''}`;
-    return `/${locale}${path}`.replace(/\/{2,}/g, '/');
-  };
 
   const toButtonVariant = (
     v?: string | null
@@ -314,7 +328,6 @@ export const Hero = ({
             ) : null}
 
             <span className="text-muted text-xs font-light leading-tight">
-              {/* ✅ eslint: react/no-unescaped-entities */}
               LAZAR&apos;S SZÉPSÉGSZALON BUDAPEST
             </span>
 
@@ -366,10 +379,13 @@ export const Hero = ({
             className="mt-6 flex flex-col gap-4 sm:mt-8 sm:flex-row"
           >
             {CTAs?.map((cta, idx) => {
-              const href = withLocale(cta.URL);
+              const href = joinLocaleHref(locale, cta.URL);
               const target = cta.target || undefined;
               const rel =
                 target === '_blank' ? 'noopener noreferrer' : undefined;
+
+              const external = isExternalUrl(cta.URL);
+              const Cmp: any = external ? 'a' : Link;
 
               if (idx === 0) {
                 return (
@@ -379,13 +395,13 @@ export const Hero = ({
                     asChild
                     className={primaryCtaClass}
                   >
-                    <Link href={href} target={target} rel={rel}>
+                    <Cmp href={href} target={target} rel={rel}>
                       <CalendarIcon size={20} />
                       <span>{cta.text}</span>
                       <span className="w-0 overflow-hidden transition-all duration-300 ease-in-out group-hover:w-6">
                         →
                       </span>
-                    </Link>
+                    </Cmp>
                   </Button>
                 );
               }
@@ -398,12 +414,12 @@ export const Hero = ({
                     asChild
                     className={secondaryCtaClass}
                   >
-                    <Link href={href} target={target} rel={rel}>
+                    <Cmp href={href} target={target} rel={rel}>
                       <span>{cta.text}</span>
                       <span className="w-0 overflow-hidden transition-all duration-300 ease-in-out group-hover:w-6">
                         →
                       </span>
-                    </Link>
+                    </Cmp>
                   </Button>
                 );
               }
@@ -415,9 +431,9 @@ export const Hero = ({
                   asChild
                   className={secondaryCtaClass}
                 >
-                  <Link href={href} target={target} rel={rel}>
+                  <Cmp href={href} target={target} rel={rel}>
                     <span>{cta.text}</span>
-                  </Link>
+                  </Cmp>
                 </Button>
               );
             })}
