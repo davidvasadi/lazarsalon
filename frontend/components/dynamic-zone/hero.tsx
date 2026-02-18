@@ -467,14 +467,14 @@ export const Hero = ({
           ) : null}
 
           {/* CTA divider line (secondary) */}
-          <motion.div
+          {/* <motion.div
             initial={
               reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }
             }
             animate={{ opacity: 1, y: 0 }}
             transition={reduceMotion ? instant : { duration: 0.9, delay: 0.95 }}
             className={dividerClass}
-          />
+          /> */}
         </div>
       </div>
 
@@ -503,7 +503,7 @@ export const Hero = ({
                 </span>
               </div>
               <div className={`${infoSubClass} truncate`}>
-                TÖBB MINT 140+ ELÉGEDETT VENDÉG
+                TÖBB MINT 160+ ELÉGEDETT VENDÉG
               </div>
             </motion.div>
 
@@ -527,7 +527,7 @@ export const Hero = ({
                 </span>
               </div>
               <div className={`${infoSubClass} ml-auto truncate`}>
-                NYITVA: H–SZO 09:00 – 20:00
+                NYITVA: H–Szo 09:00 – 20:00
               </div>
             </motion.div>
           </div>

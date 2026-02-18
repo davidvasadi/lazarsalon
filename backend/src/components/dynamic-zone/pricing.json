@@ -17,6 +17,9 @@
       "type": "relation",
       "relation": "oneToMany",
       "target": "api::plan.plan"
+    },
+    "section_id": {
+      "type": "string"
     }
   }
 }

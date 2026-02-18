@@ -58,7 +58,8 @@
         "dynamic-zone.gallery-slider",
         "items.service-card",
         "dynamic-zone.team-section",
-        "dynamic-zone.gallery"
+        "dynamic-zone.gallery",
+        "dynamic-zone.privacy"
       ]
     },
     "pages": {

@@ -73,15 +73,19 @@ export const AIToast = () => {
         'fixed z-50',
         'left-4 right-4 bottom-4',
         'sm:left-4 sm:right-auto sm:bottom-4',
-        // ✅ safe-area iOS-hoz
+
+        // ✅ safe-area iOS-hoz (a belső paddinggel együtt is OK)
         'pb-[env(safe-area-inset-bottom)]',
+
         // ✅ méret
         'w-auto sm:w-[420px]',
         'max-w-[min(420px,calc(100vw-2rem))]',
 
-        // ✅ biztos megjelenés
-        'opacity-0 transition-all',
-        isOpen && 'opacity-100',
+        // ✅ láthatóság + kattintás-blokkolás FIX
+        'transition-all duration-200',
+        isOpen
+          ? 'opacity-100 translate-y-0 pointer-events-auto'
+          : 'opacity-0 translate-y-2 pointer-events-none',
 
         // ✅ skin
         'bg-white border border-charcoal shadow-lg rounded-2xl',

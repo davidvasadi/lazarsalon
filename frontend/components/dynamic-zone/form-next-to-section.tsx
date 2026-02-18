@@ -27,6 +27,8 @@ import { Container } from '@/components/container';
 
 // components/dynamic-zone/form-next-to-section.tsx (vagy ahol ez a komponensed van)
 
+// components/dynamic-zone/form-next-to-section.tsx (vagy ahol ez a komponensed van)
+
 type StrapiLinkItem = {
   id?: number;
   text?: string | null;
@@ -483,97 +485,154 @@ export function FormNextToSection({
                 Elérhetőségeink
               </h2>
 
+              {/* CONTACT LIST */}
               <div className="mt-6 space-y-5">
-                {hasText(contact.address) ? (
-                  <div className="flex gap-4">
-                    <div
-                      className="h-10 w-10 rounded-full flex items-center justify-center shrink-0"
-                      style={{ background: COLORS.charcoal }}
-                    >
-                      <IconMapPin
-                        className="h-5 w-5"
-                        style={{ color: COLORS.muted }}
-                        stroke={1.8}
-                      />
-                    </div>
-                    <div>
-                      <p
-                        className="text-xs font-semibold"
-                        style={{ color: COLORS.muted }}
-                      >
-                        {addressLabel}
-                      </p>
-                      <p
-                        className="mt-1 text-sm whitespace-pre-line"
-                        style={{ color: COLORS.lightblack }}
-                      >
-                        {contact.address}
-                      </p>
-                    </div>
-                  </div>
-                ) : null}
+                {/* ADDRESS */}
+                {hasText(contact.address)
+                  ? (() => {
+                      const href = hasText(contact.routeUrl)
+                        ? contact.routeUrl
+                        : '';
+                      const Wrapper: any = href ? Link : 'div';
+                      const wrapperProps = href
+                        ? { href, target: '_blank', rel: 'noreferrer' }
+                        : {};
 
-                {/* ✅ csak ha van Strapi phone */}
-                {hasText(contact.phone) ? (
-                  <div className="flex gap-4">
-                    <div
-                      className="h-10 w-10 rounded-full flex items-center justify-center shrink-0"
-                      style={{ background: COLORS.charcoal }}
-                    >
-                      <IconPhone
-                        className="h-5 w-5"
-                        style={{ color: COLORS.muted }}
-                        stroke={1.8}
-                      />
-                    </div>
-                    <div>
-                      <p
-                        className="text-xs font-semibold"
-                        style={{ color: COLORS.muted }}
-                      >
-                        {leftPhoneTitle}
-                      </p>
-                      <Link
-                        href={toTel(contact.phone)}
-                        className="mt-1 inline-block text-sm hover:underline"
-                        style={{ color: COLORS.lightblack }}
-                      >
-                        {contact.phone}
-                      </Link>
-                    </div>
-                  </div>
-                ) : null}
+                      return (
+                        <Wrapper
+                          {...wrapperProps}
+                          className={
+                            href
+                              ? 'flex gap-4 group cursor-pointer'
+                              : 'flex gap-4'
+                          }
+                        >
+                          <div
+                            className="h-10 w-10 rounded-full flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:-translate-y-[1px]"
+                            style={{ background: COLORS.charcoal }}
+                          >
+                            <IconMapPin
+                              className="h-5 w-5"
+                              style={{ color: COLORS.muted }}
+                              stroke={1.8}
+                            />
+                          </div>
 
-                {/* ✅ csak ha van Strapi email */}
-                {hasText(contact.email) ? (
-                  <div className="flex gap-4">
-                    <div
-                      className="h-10 w-10 rounded-full flex items-center justify-center shrink-0"
-                      style={{ background: COLORS.charcoal }}
-                    >
-                      <IconMail
-                        className="h-5 w-5"
-                        style={{ color: COLORS.muted }}
-                        stroke={1.8}
-                      />
-                    </div>
-                    <div>
-                      <p
-                        className="text-xs font-semibold"
-                        style={{ color: COLORS.muted }}
-                      >
-                        {leftEmailTitle}
-                      </p>
-                      <Link
-                        href={`mailto:${contact.email}`}
-                        className="mt-1 inline-block text-sm hover:underline"
-                        style={{ color: COLORS.lightblack }}
-                      >
-                        {contact.email}
-                      </Link>
-                    </div>
-                  </div>
-                ) : null}
+                          <div>
+                            <p
+                              className="text-xs font-semibold"
+                              style={{ color: COLORS.muted }}
+                            >
+                              {addressLabel}
+                            </p>
+
+                            <p
+                              className="mt-1 text-sm whitespace-pre-line"
+                              style={{ color: COLORS.lightblack }}
+                            >
+                              {contact.address}
+                            </p>
+
+                            {href ? (
+                              <p
+                                className="mt-1 text-[11px] font-semibold opacity-0 group-hover:opacity-100 transition-opacity"
+                                style={{ color: COLORS.secondary }}
+                              >
+                                Útvonaltervezés →
+                              </p>
+                            ) : null}
+                          </div>
+                        </Wrapper>
+                      );
+                    })()
+                  : null}
+
+                {/* PHONE */}
+                {hasText(contact.phone)
+                  ? (() => {
+                      const telHref = toTel(contact.phone); // tel:+3630...
+                      const Wrapper: any = telHref ? Link : 'div';
+                      const wrapperProps = telHref ? { href: telHref } : {};
+
+                      return (
+                        <Wrapper
+                          {...wrapperProps}
+                          className={
+                            telHref
+                              ? 'flex gap-4 group cursor-pointer'
+                              : 'flex gap-4'
+                          }
+                        >
+                          <div
+                            className="h-10 w-10 rounded-full flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:-translate-y-[1px]"
+                            style={{ background: COLORS.charcoal }}
+                          >
+                            <IconPhone
+                              className="h-5 w-5"
+                              style={{ color: COLORS.muted }}
+                              stroke={1.8}
+                            />
+                          </div>
+
+                          <div>
+                            <p
+                              className="text-xs font-semibold"
+                              style={{ color: COLORS.muted }}
+                            >
+                              {leftPhoneTitle}
+                            </p>
+
+                            <p
+                              className="mt-1 text-sm hover:underline"
+                              style={{ color: COLORS.lightblack }}
+                            >
+                              {contact.phone}
+                            </p>
+                          </div>
+                        </Wrapper>
+                      );
+                    })()
+                  : null}
+
+                {/* EMAIL */}
+                {hasText(contact.email)
+                  ? (() => {
+                      const mailHref = `mailto:${contact.email}`;
+                      return (
+                        <Link
+                          href={mailHref}
+                          className="flex gap-4 group cursor-pointer"
+                        >
+                          <div
+                            className="h-10 w-10 rounded-full flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:-translate-y-[1px]"
+                            style={{ background: COLORS.charcoal }}
+                          >
+                            <IconMail
+                              className="h-5 w-5"
+                              style={{ color: COLORS.muted }}
+                              stroke={1.8}
+                            />
+                          </div>
+
+                          <div>
+                            <p
+                              className="text-xs font-semibold"
+                              style={{ color: COLORS.muted }}
+                            >
+                              {leftEmailTitle}
+                            </p>
+
+                            <p
+                              className="mt-1 text-sm hover:underline"
+                              style={{ color: COLORS.lightblack }}
+                            >
+                              {contact.email}
+                            </p>
+                          </div>
+                        </Link>
+                      );
+                    })()
+                  : null}
               </div>
 
               {openingHours.length ? (

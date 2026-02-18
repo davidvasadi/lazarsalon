@@ -351,7 +351,7 @@ export const CTA = ({
               {sub_heading ? (
                 <WriteInSubheading
                   text={sub_heading}
-                  className="mt-5 md:mt-6 text-secondary text-sm md:text-base leading-relaxed text-center md:text-left max-w-xl mx-auto md:mx-0"
+                  className="mt-5 md:mt-6 text-secondary text-sm md:text-base leading-relaxed text-left max-w-xl mx-auto md:mx-0"
                 />
               ) : null}
 
@@ -402,7 +402,7 @@ export const CTA = ({
                         whileHover={reduce ? undefined : { y: -1 }}
                         transition={{ duration: 0.2, ease: EASE }}
                       >
-                        <div className="inline-flex items-center gap-2 md:px-3 py-2 text-sm text-secondary ">
+                        <div className="inline-flex items-center gap-2 xl:px-3 py-2 text-sm text-secondary ">
                           <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-charcoal/70 text-lightblack">
                             <Clock className="h-4 w-4" />
                           </span>

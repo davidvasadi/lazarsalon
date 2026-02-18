@@ -300,20 +300,45 @@ function HeaderButton({
   text,
   href,
   target,
+  size = 'md',
 }: {
   text: string;
   href: string;
   target: string;
+  size?: 'md' | 'mobile';
 }) {
-  const subLike =
+  const base = 'group inline-flex items-center gap-2 whitespace-nowrap';
+
+  // desktop (régi, finom link)
+  const desktopText =
     'text-secondary text-sm md:text-base leading-relaxed transition-colors group-hover:text-lightblack';
 
-  const content = (
-    <>
-      <span className={subLike}>{text}</span>
-      <ChevronRight className="h-4 w-4 text-muted transition-transform duration-300 group-hover:translate-x-0.5" />
-    </>
-  );
+  // ✅ mobil (formos CTA gomb)
+  const mobileBtn =
+    'relative w-full justify-center overflow-hidden rounded-xl border-none px-4 py-3 shadow-sm bg-secondary text-white';
+
+  const mobileText =
+    'relative z-10 inline-flex items-center gap-2 text-xs font-semibold tracking-wide';
+
+  const content =
+    size === 'mobile' ? (
+      <>
+        <span className={mobileText}>
+          {text}
+          <ChevronRight className="h-5 w-5 text-muted transition-transform duration-300 group-hover:translate-x-0.5" />
+        </span>
+
+        {/* ✅ sweep highlight */}
+        <span className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-white/0 via-white/25 to-white/0" />
+      </>
+    ) : (
+      <>
+        <span className={desktopText}>{text}</span>
+        <ChevronRight className="h-4 w-4 text-muted transition-transform duration-300 group-hover:translate-x-0.5" />
+      </>
+    );
+
+  const className = cn(base, size === 'mobile' ? mobileBtn : '');
 
   if (isExternal(href)) {
     return (
@@ -321,7 +346,7 @@ function HeaderButton({
         href={href}
         target={target}
         rel={target === '_blank' ? 'noopener noreferrer' : undefined}
-        className="group inline-flex items-center gap-2 whitespace-nowrap"
+        className={className}
         aria-label={text}
       >
         {content}
@@ -330,12 +355,7 @@ function HeaderButton({
   }
 
   return (
-    <Link
-      href={href}
-      target={target}
-      className="group inline-flex items-center gap-2 whitespace-nowrap"
-      aria-label={text}
-    >
+    <Link href={href} target={target} className={className} aria-label={text}>
       {content}
     </Link>
   );
@@ -497,12 +517,18 @@ export function Gallery({
       <Container className="py-10 md:py-14">
         {heading || sub_heading || showHeaderButton ? (
           <div className="mb-6 md:mb-8">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-4">
               <div className="min-w-0">
                 {heading ? (
                   <WriteInHeading
                     text={heading}
-                    className="text-left text-4xl font-light leading-tight text-secondary md:text-5xl"
+                    className={cn(
+                      // ✅ mobil: kisebb, jobb leading, ne törjön idétlenül
+                      'text-left font-light leading-[1.05] text-secondary',
+                      'text-[clamp(32px,8.5vw,44px)]',
+                      // ✅ md+
+                      'md:text-5xl md:leading-tight'
+                    )}
                   />
                 ) : null}
 
@@ -511,13 +537,25 @@ export function Gallery({
                 {sub_heading ? (
                   <WriteInSubheading
                     text={sub_heading}
-                    className="mx-auto mt-5 max-w-xl text-center text-sm leading-relaxed text-secondary md:mx-0 md:mt-6 md:text-left md:text-base"
+                    className={cn(
+                      // ✅ mobil: kényelmes, ne legyen mx-auto/mx-0 keverés
+                      'mt-4 text-left text-sm leading-relaxed text-secondary',
+                      // ✅ md+
+                      'md:mt-6 md:max-w-xl md:text-base'
+                    )}
                   />
                 ) : null}
               </div>
 
+              {/* ✅ gomb csak md+ headerben (mobilon majd a képek alatt) */}
               {showHeaderButton ? (
-                <HeaderButton text={btnText} href={btnUrl} target={btnTarget} />
+                <div className="hidden md:block">
+                  <HeaderButton
+                    text={btnText}
+                    href={btnUrl}
+                    target={btnTarget}
+                  />
+                </div>
               ) : null}
             </div>
           </div>
@@ -560,6 +598,16 @@ export function Gallery({
               ))}
             </div>
           )}
+          {showHeaderButton ? (
+            <div className="mt-4">
+              <HeaderButton
+                text={btnText}
+                href={btnUrl}
+                target={btnTarget}
+                size="mobile"
+              />
+            </div>
+          ) : null}
         </div>
 
         {/* DESKTOP */}

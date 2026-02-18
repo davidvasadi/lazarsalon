@@ -809,6 +809,7 @@ export interface ApiPagePage extends Struct.CollectionTypeSchema {
         'items.service-card',
         'dynamic-zone.team-section',
         'dynamic-zone.gallery',
+        'dynamic-zone.privacy',
       ]
     > &
       Schema.Attribute.SetPluginOptions<{

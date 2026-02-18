@@ -6,10 +6,12 @@ import { ArrowUpRight, Star } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 
 import { Container } from '../../container';
-import { AmbientColor } from '../../decorations/ambient-color';
+// import { AmbientColor } from '../../decorations/ambient-color';
 import { Heading } from '../../elements/heading';
 import { Subheading } from '../../elements/subheading';
 import { TestimonialsSlider } from './slider';
+
+// components/dynamic-zone/testimonials/index.tsx
 
 // components/dynamic-zone/testimonials/index.tsx
 
@@ -357,7 +359,7 @@ export const Testimonials = ({
 
   return (
     <div className="relative">
-      <AmbientColor />
+      {/* <AmbientColor /> */}
 
       <motion.section
         variants={sectionV}
@@ -402,7 +404,7 @@ export const Testimonials = ({
                     text={sub_heading}
                     as="p"
                     kind="subheading"
-                    className="mt-5 md:mt-6 text-secondary text-sm md:text-base leading-relaxed text-center md:text-left max-w-xl mx-auto md:mx-0"
+                    className="mt-5 md:mt-6 text-secondary text-sm md:text-base leading-relaxed text-left max-w-xl mx-auto md:mx-0"
                   />
                 </motion.div>
 
@@ -426,12 +428,13 @@ export const Testimonials = ({
                         </span>{' '}
                         / 5.0{' '}
                         <span className="text-secondary/60">
-                          több mint {totalReviews} értékelés alapján
+                          több mint {totalReviews} 160 értékelés alapján
                         </span>
                       </>
                     ) : (
                       <span className="text-secondary/60">
-                        4.9 / 5.0 értékelés alapján
+                        4.9 / 5.0 Több mint{' '}
+                        <span className="font-bold">160</span> értékelés alapján
                       </span>
                     )}
                   </div>

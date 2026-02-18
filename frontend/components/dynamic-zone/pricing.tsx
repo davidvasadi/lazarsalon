@@ -23,6 +23,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Container } from '../container';
 import { Heading } from '../elements/heading';
 import { Subheading } from '../elements/subheading';
+import { normalizeSectionId } from '../ui/section-id';
 import { cn } from '@/lib/utils';
 
 /** IMPORTANT: ne defaultolj localhostra prod miatt */
@@ -408,12 +409,14 @@ function WriteInSubheading({
 
 // -------------------- Component --------------------
 export function Pricing({
+  section_id,
   heading,
   sub_heading,
   plans,
   filterByPageSlug,
   stickyBar = true,
 }: {
+  section_id?: string | null;
   heading: string;
   sub_heading?: string | null;
   plans: any[];
@@ -422,6 +425,8 @@ export function Pricing({
 }) {
   const reduce = useReducedMotion();
   const detailRef = useRef<HTMLDivElement | null>(null);
+
+  const sid = normalizeSectionId(section_id);
 
   const normalized = useMemo(
     () => asArray(plans).map(normalizePlan).filter(Boolean),
@@ -467,17 +472,18 @@ export function Pricing({
 
   return (
     <motion.section
+      id={sid}
       variants={sectionV}
       initial={reduce ? false : 'hidden'}
       whileInView={reduce ? undefined : 'show'}
       viewport={VIEWPORT}
       className={cn(
         // ✅ mobilon extra bottom space a FIX bar magasságára
-        'relative pt-14 pb-44 md:pt-20 md:pb-24',
+        'relative pt-14 pb-44 md:pt-20 md:pb-24 scroll-mt-24',
         !stickyBar && 'pb-14 md:pb-24'
       )}
     >
-      {/* ✅ mobil FIX sticky bar: ugyanaz a max-w + px, mint a Container (szélesség + “margók” egyeznek) */}
+      {/* ✅ mobil FIX sticky bar: ugyanaz a max-w + px, mint a Container */}
       {stickyBar && current ? (
         <div className="lg:hidden fixed inset-x-0 bottom-3 z-40 pointer-events-none">
           <div
@@ -512,11 +518,7 @@ export function Pricing({
             initial={reduce ? false : 'hidden'}
             whileInView={reduce ? undefined : 'show'}
             viewport={VIEWPORT}
-            className={cn(
-              'grid items-start',
-              'gap-4 md:gap-5',
-              'lg:grid-cols-2'
-            )}
+            className={cn('grid items-start gap-4 md:gap-5 lg:grid-cols-2')}
           >
             {/* LEFT */}
             <motion.div variants={colV} className="relative">
@@ -574,12 +576,13 @@ export function Pricing({
                                 />
                               ) : null}
 
-                              <div className="relative z-10 flex items-center gap-3">
+                              <div className="relative z-10 flex items-start gap-3">
                                 <div
                                   className={cn(
                                     'relative overflow-hidden rounded-lg border bg-white',
                                     'border-black/10',
-                                    'h-9 w-9 sm:h-10 sm:w-10'
+                                    'h-9 w-9 sm:h-10 sm:w-10',
+                                    'shrink-0'
                                   )}
                                 >
                                   {cover?.src ? (
@@ -609,9 +612,11 @@ export function Pricing({
                                 </div>
 
                                 <div className="min-w-0 flex-1">
-                                  <div className="flex items-center justify-between gap-3">
-                                    <div className="truncate text-sm font-semibold text-lightblack">
-                                      {p.name ?? 'Szolgáltatás'}
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                      <div className="text-sm font-semibold text-lightblack leading-snug break-words [overflow-wrap:anywhere]">
+                                        {p.name ?? 'Szolgáltatás'}
+                                      </div>
                                     </div>
 
                                     {p.featured ? (
@@ -634,9 +639,9 @@ export function Pricing({
                                     </div>
 
                                     {duration ? (
-                                      <div className="flex items-center gap-1.5 text-xs text-secondary">
-                                        <Clock3 className="h-3.5 w-3.5 text-muted" />
-                                        <span className="truncate">
+                                      <div className="min-w-0 flex items-center gap-1.5 text-xs text-secondary">
+                                        <Clock3 className="h-3.5 w-3.5 text-muted shrink-0" />
+                                        <span className="min-w-0 break-words [overflow-wrap:anywhere]">
                                           {duration}
                                         </span>
                                       </div>
@@ -646,7 +651,7 @@ export function Pricing({
 
                                 <ChevronRight
                                   className={cn(
-                                    'h-4 w-4 shrink-0',
+                                    'h-4 w-4 shrink-0 mt-0.5',
                                     isActive
                                       ? 'text-secondary'
                                       : 'text-secondary/60'
@@ -706,7 +711,6 @@ export function Pricing({
                     </AnimatePresence>
                   </div>
 
-                  {/* ✅ desktopon a “kártya alatti” margó ugyanaz, mint eddig */}
                   {stickyBar && current ? (
                     <div className="hidden lg:block mt-3 md:mt-4 sticky bottom-3">
                       <StickyBar plan={current} />
@@ -756,15 +760,16 @@ function Detail({ plan }: { plan: Plan }) {
   return (
     <div>
       <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-xl border border-black/10 bg-white">
+        <div className="flex items-start gap-3 min-w-0">
+          <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-xl border border-black/10 bg-white shrink-0">
             <Icon className="h-5 w-5 text-muted" />
           </div>
 
           <div className="min-w-0">
-            <div className="text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight text-lightblack truncate">
+            <div className="text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight text-lightblack leading-snug break-words [overflow-wrap:anywhere]">
               {plan?.name ?? 'Szolgáltatás'}
             </div>
+
             <div className="mt-1 text-sm text-secondary">
               {plan?.featured
                 ? 'Kiemelt szolgáltatás'
@@ -794,14 +799,16 @@ function Detail({ plan }: { plan: Plan }) {
         </div>
 
         {duration ? (
-          <div className="flex items-center gap-2 text-sm text-secondary">
-            <Clock3 className="h-4 w-4 text-muted" />
-            <span className="truncate">{duration}</span>
+          <div className="min-w-0 flex items-center gap-2 text-sm text-secondary">
+            <Clock3 className="h-4 w-4 text-muted shrink-0" />
+            <span className="min-w-0 break-words [overflow-wrap:anywhere]">
+              {duration}
+            </span>
           </div>
         ) : null}
       </div>
 
-      <p className="mt-4 text-sm leading-relaxed text-secondary">
+      <p className="mt-4 text-sm leading-relaxed text-secondary break-words [overflow-wrap:anywhere]">
         {longText ||
           'Adj a Plan-hez egy hosszabb leírást (lásd lent: long_description), és ide automatikusan bekerül.'}
       </p>
@@ -815,9 +822,11 @@ function Detail({ plan }: { plan: Plan }) {
             >
               <span
                 aria-hidden
-                className="mt-1.5 h-1.5 w-1.5 rounded-full bg-secondary/40"
+                className="mt-1.5 h-1.5 w-1.5 rounded-full bg-secondary/40 shrink-0"
               />
-              <span>{(b?.text ?? '').toString()}</span>
+              <span className="break-words [overflow-wrap:anywhere]">
+                {(b?.text ?? '').toString()}
+              </span>
             </div>
           ))}
         </div>
@@ -883,7 +892,13 @@ function StickyBar({ plan }: { plan: Plan }) {
           Kiválasztott
         </div>
 
-        <div className="mt-1 text-sm font-semibold text-lightblack line-clamp-2">
+        <div
+          className={cn(
+            'mt-1 text-sm font-semibold text-lightblack leading-snug',
+            'break-words [overflow-wrap:anywhere]',
+            'line-clamp-2'
+          )}
+        >
           {plan?.name ?? ''}
         </div>
 
@@ -893,9 +908,11 @@ function StickyBar({ plan }: { plan: Plan }) {
           </div>
 
           {duration ? (
-            <div className="flex items-center gap-1.5 text-xs text-secondary">
-              <Clock3 className="h-3.5 w-3.5 text-muted" />
-              <span className="truncate">{duration}</span>
+            <div className="min-w-0 flex items-center gap-1.5 text-xs text-secondary">
+              <Clock3 className="h-3.5 w-3.5 text-muted shrink-0" />
+              <span className="min-w-0 break-words [overflow-wrap:anywhere]">
+                {duration}
+              </span>
             </div>
           ) : null}
         </div>

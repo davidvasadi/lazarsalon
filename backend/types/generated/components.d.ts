@@ -234,7 +234,32 @@ export interface DynamicZonePricing extends Struct.ComponentSchema {
   attributes: {
     heading: Schema.Attribute.String;
     plans: Schema.Attribute.Relation<'oneToMany', 'api::plan.plan'>;
+    section_id: Schema.Attribute.String;
     sub_heading: Schema.Attribute.String;
+  };
+}
+
+export interface DynamicZonePrivacy extends Struct.ComponentSchema {
+  collectionName: 'components_dynamic_zone_privacies';
+  info: {
+    displayName: 'Privacy';
+    icon: 'calendar';
+  };
+  attributes: {
+    address: Schema.Attribute.String;
+    analytics_tools: Schema.Attribute.String;
+    body: Schema.Attribute.Text;
+    booking_provider: Schema.Attribute.String;
+    company_id: Schema.Attribute.String;
+    company_name: Schema.Attribute.String;
+    effective_form: Schema.Attribute.Date;
+    email: Schema.Attribute.String;
+    heading: Schema.Attribute.String;
+    hosting_provider: Schema.Attribute.String;
+    last_updated: Schema.Attribute.Date;
+    phone: Schema.Attribute.String;
+    sub_heading: Schema.Attribute.String;
+    third_parties: Schema.Attribute.Text;
   };
 }
 
@@ -682,6 +707,7 @@ declare module '@strapi/strapi' {
       'dynamic-zone.how-it-works': DynamicZoneHowItWorks;
       'dynamic-zone.launches': DynamicZoneLaunches;
       'dynamic-zone.pricing': DynamicZonePricing;
+      'dynamic-zone.privacy': DynamicZonePrivacy;
       'dynamic-zone.related-articles': DynamicZoneRelatedArticles;
       'dynamic-zone.related-products': DynamicZoneRelatedProducts;
       'dynamic-zone.services': DynamicZoneServices;

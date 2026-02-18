@@ -1,0 +1,53 @@
+{
+  "collectionName": "components_dynamic_zone_privacies",
+  "info": {
+    "displayName": "Privacy",
+    "icon": "calendar"
+  },
+  "options": {},
+  "attributes": {
+    "heading": {
+      "type": "string"
+    },
+    "sub_heading": {
+      "type": "string"
+    },
+    "effective_form": {
+      "type": "date"
+    },
+    "last_updated": {
+      "type": "date"
+    },
+    "body": {
+      "type": "text"
+    },
+    "email": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "company_name": {
+      "type": "string"
+    },
+    "company_id": {
+      "type": "string"
+    },
+    "hosting_provider": {
+      "type": "string"
+    },
+    "booking_provider": {
+      "type": "string"
+    },
+    "analytics_tools": {
+      "type": "string"
+    },
+    "third_parties": {
+      "type": "text"
+    }
+  },
+  "config": {}
+}

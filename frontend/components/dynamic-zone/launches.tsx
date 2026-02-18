@@ -34,6 +34,16 @@ const LAZY_T = { duration: 1.15, ease: [0.16, 1, 0.3, 1] as const };
 
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 
+// ✅ signed offset: -2,-1,0,1,2 … (a legrövidebb irány)
+function signedOffset(idx: number, active: number, total: number) {
+  if (total <= 0) return 0;
+  let d = idx - active;
+  const half = Math.floor(total / 2);
+  if (d > half) d -= total;
+  if (d < -half) d += total;
+  return d;
+}
+
 /* ──────────────────────────────────────────────
    Write-in typography (mint a CTA-ban)
 ────────────────────────────────────────────── */
@@ -310,10 +320,15 @@ export const Launches = ({
     setActive((p) => mod(p + dir, total));
   };
 
+  // ✅ “peek” tuning (StepCarousel érzet)
+  const PEEK_1 = 18;
+  const PEEK_2 = 34;
+  const ROT_1 = 1.1;
+  const ROT_2 = 2.1;
+
   return (
     <section className="w-full relative h-full pt-20 md:pt-32">
       <div className="mx-auto max-w-7xl px-6">
-        {/* ✅ Desktop: címrész + kártyák egymás mellett */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-[420px_1fr] md:gap-8 md:items-start">
           {/* LEFT: header */}
           <div className="text-left md:pt-12">
@@ -326,7 +341,7 @@ export const Launches = ({
 
             <WriteInSubheading
               text={sub_heading}
-              className="mt-5 max-w-2xl mx-auto md:mx-0 text-center md:text-left text-sm md:text-base leading-relaxed text-lightblack/80"
+              className="mt-5 max-w-2xl mx-auto md:mx-0 text-left text-sm md:text-base leading-relaxed text-lightblack/80"
             />
           </div>
 
@@ -344,26 +359,43 @@ export const Launches = ({
             }}
             aria-label="Lépések karusszel"
           >
-            <div className="relative h-[350px] md:h-[420px]">
+            <div
+              className="relative h-[350px] md:h-[420px] overflow-visible"
+              style={{ perspective: '900px' }}
+            >
               <div className="absolute inset-0 flex items-center justify-center">
                 {slides.map((s, idx) => {
                   if (!total) return null;
 
-                  const offset = mod(idx - safeActive, total);
+                  const d = signedOffset(idx, safeActive, total);
 
-                  const isFront = offset === 0;
-                  const isBack1 = offset === 1;
-                  const isBack2 = offset === 2;
+                  // csak a közeli kártyákat tartsuk “életben”
+                  const isFront = d === 0;
+                  const isNear = Math.abs(d) <= 2;
+                  if (!isNear) return null;
 
-                  const state = isFront
-                    ? { y: 0, scale: 1, opacity: 1 }
-                    : isBack1
-                      ? { y: -30, scale: 0.94, opacity: 0.88 }
-                      : isBack2
-                        ? { y: -58, scale: 0.9, opacity: 0.76 }
-                        : { y: -86, scale: 0.88, opacity: 0 };
+                  const dir = Math.sign(d); // -1 = bal, +1 = jobb
 
-                  const z = isFront ? 30 : isBack1 ? 20 : isBack2 ? 10 : 0;
+                  const state =
+                    d === 0
+                      ? { x: 0, y: 0, rotateZ: 0, scale: 1, opacity: 1 }
+                      : Math.abs(d) === 1
+                        ? {
+                            x: dir * PEEK_1,
+                            y: -26,
+                            rotateZ: dir * ROT_1,
+                            scale: 0.95,
+                            opacity: 0.92,
+                          }
+                        : {
+                            x: dir * PEEK_2,
+                            y: -50,
+                            rotateZ: dir * ROT_2,
+                            scale: 0.9,
+                            opacity: 0.82,
+                          };
+
+                  const z = 50 - Math.abs(d) * 10;
 
                   return (
                     <motion.div
@@ -372,6 +404,7 @@ export const Launches = ({
                       style={{
                         zIndex: z,
                         pointerEvents: isFront ? 'auto' : 'none',
+                        transformStyle: 'preserve-3d',
                       }}
                       initial={false}
                       animate={state}
@@ -403,63 +436,107 @@ export const Launches = ({
                         }
                         aria-hidden={!isFront}
                       >
+                        {/* ✅ FIX: hátsó kártyákon ne látszódjon a tartalom (csak a “lap”) */}
                         <div className="relative p-6 md:p-8">
-                          {/* ✅ nagy sarokszám */}
-                          <div className="pointer-events-none absolute right-6 top-5 md:right-8 md:top-2 select-none tabular-nums text-[42px] md:text-[72px] font-semibold text-secondary">
-                            {String(s.no).padStart(2, '0')}
-                          </div>
-
-                          <div className="max-w-2xl">
-                            {/* ✅ semibold a kártya címe */}
-                            <div className="text-3xl md:text-5xl leading-[1.05] text-secondary">
-                              {s.title}
-                            </div>
-
-                            {/* ✅ GoldLine a cím után (kártyában is) */}
-                            <GoldLine align="left" />
-
-                            {s.desc ? (
-                              <p className="mt-4 text-sm md:text-base leading-relaxed text-lightblack/80">
-                                {s.desc}
-                              </p>
-                            ) : null}
-
-                            {isFront && s.ctaText && s.ctaHref ? (
-                              <div className="mt-6">
-                                <UnderlineCTA
-                                  text={s.ctaText}
-                                  href={s.ctaHref}
+                          {/* (opcionális) a kártya magasság stabil legyen, akkor is ha a content el van rejtve */}
+                          <div className="min-h-[240px] md:min-h-[290px]">
+                            {/* ✅ sarokszám: maradhat, de csak fronton látszódjon (különben “átüt”) */}
+                            <div
+                              className={[
+                                'pointer-events-none absolute right-4 top-3 md:right-8 md:top-2',
+                                'select-none tabular-nums font-semibold',
+                                'text-secondary',
+                                'text-[34px] md:text-[72px]',
+                                isFront ? '' : 'invisible',
+                              ].join(' ')}
+                            >
+                              <span className="relative">
+                                <span className="relative z-10">
+                                  {String(s.no).padStart(2, '0')}
+                                </span>
+                                <span
+                                  className="absolute inset-[-6px] -z-10 md:hidden rounded-lg blur-[10px]"
+                                  style={{
+                                    background: 'rgba(255,255,255,0.65)',
+                                  }}
+                                  aria-hidden
                                 />
+                              </span>
+                            </div>
+
+                            {/* ✅ content blokk: csak fronton látható */}
+                            <div
+                              className={[
+                                'max-w-2xl',
+                                isFront
+                                  ? 'opacity-100 visible'
+                                  : 'opacity-0 invisible pointer-events-none select-none',
+                              ].join(' ')}
+                              aria-hidden={!isFront}
+                            >
+                              <div
+                                className={[
+                                  'text-secondary leading-[1.06]',
+                                  'text-[26px] sm:text-[30px]',
+                                  'md:text-5xl',
+                                  'break-words',
+                                  'hyphens-auto',
+                                ].join(' ')}
+                                style={{ textWrap: 'balance' as any }}
+                              >
+                                {s.title}
                               </div>
+
+                              <GoldLine align="left" />
+
+                              {s.desc ? (
+                                <p className="mt-4 text-sm md:text-base leading-relaxed text-lightblack/80">
+                                  {s.desc}
+                                </p>
+                              ) : null}
+
+                              {s.ctaText && s.ctaHref ? (
+                                <div className="mt-6">
+                                  <UnderlineCTA
+                                    text={s.ctaText}
+                                    href={s.ctaHref}
+                                  />
+                                </div>
+                              ) : null}
+
+                              <div className="mt-8 flex items-center justify-center gap-2">
+                                {Array.from({ length: Math.max(1, total) }).map(
+                                  (_, d2) => {
+                                    const on = d2 === safeActive;
+                                    return (
+                                      <button
+                                        key={d2}
+                                        type="button"
+                                        onClick={() => setActive(d2)}
+                                        className={[
+                                          'h-2.5 w-2.5 rounded-full transition',
+                                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-charcoal/15',
+                                          on
+                                            ? 'bg-secondary'
+                                            : 'bg-lightblack/25 hover:bg-charcoal/35',
+                                        ].join(' ')}
+                                        aria-label={`Ugrás: ${d2 + 1}.`}
+                                        aria-pressed={on}
+                                      />
+                                    );
+                                  }
+                                )}
+                              </div>
+                            </div>
+
+                            {/* ✅ BACK kártyákon csak “blank lap” marad (nem transzparens content) */}
+                            {!isFront ? (
+                              <div
+                                aria-hidden
+                                className="absolute inset-0 rounded-[26px] bg-white"
+                              />
                             ) : null}
                           </div>
-
-                          {/* pöttyök */}
-                          {isFront ? (
-                            <div className="mt-8 flex items-center justify-center gap-2">
-                              {Array.from({ length: Math.max(1, total) }).map(
-                                (_, d) => {
-                                  const on = d === safeActive;
-                                  return (
-                                    <button
-                                      key={d}
-                                      type="button"
-                                      onClick={() => setActive(d)}
-                                      className={[
-                                        'h-2.5 w-2.5 rounded-full transition',
-                                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-charcoal/15',
-                                        on
-                                          ? 'bg-secondary'
-                                          : 'bg-lightblack/25 hover:bg-charcoal/35',
-                                      ].join(' ')}
-                                      aria-label={`Ugrás: ${d + 1}.`}
-                                      aria-pressed={on}
-                                    />
-                                  );
-                                }
-                              )}
-                            </div>
-                          ) : null}
                         </div>
                       </motion.div>
                     </motion.div>
@@ -468,7 +545,7 @@ export const Launches = ({
               </div>
             </div>
 
-            {/* alul csak nyilak – secondary */}
+            {/* alul nyilak */}
             <div className="flex items-center justify-center gap-4">
               <button
                 type="button"
