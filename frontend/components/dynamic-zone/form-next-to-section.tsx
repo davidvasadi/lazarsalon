@@ -1,3 +1,4 @@
+// components/dynamic-zone/form-next-to-section.tsx (vagy ahol ez a komponensed van)
 'use client';
 
 import {
@@ -17,12 +18,12 @@ import {
 } from '@tabler/icons-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import { Button } from '../elements/button';
-import { Heading } from '../elements/heading';
-import { Subheading } from '../elements/subheading';
 import { Container } from '@/components/container';
+
+// components/dynamic-zone/form-next-to-section.tsx (vagy ahol ez a komponensed van)
 
 type StrapiLinkItem = {
   id?: number;
@@ -165,6 +166,31 @@ function deriveEmbedUrl(routeUrl: string) {
   return '';
 }
 
+function normalizeOptions(
+  raw: FormInput['options']
+): Array<{ label: string; value: string }> {
+  if (!raw) return [];
+  if (Array.isArray(raw)) {
+    return raw
+      .map((x: any) => {
+        if (typeof x === 'string') return { label: x, value: x };
+        const label = norm(x?.label);
+        const value = norm(x?.value) || label;
+        if (!label) return null;
+        return { label, value };
+      })
+      .filter(Boolean) as any;
+  }
+  return [];
+}
+
+function toTel(phone?: string | null) {
+  const p = norm(phone);
+  if (!p) return '';
+  const cleaned = p.replace(/[^\d+]/g, '');
+  return cleaned ? `tel:${cleaned}` : '';
+}
+
 export function FormNextToSection({
   heading,
   sub_heading,
@@ -179,7 +205,6 @@ export function FormNextToSection({
   const formCardHeading = norm(heading) || 'Kapcsolatfelvétel';
   const formCardSub = norm(sub_heading) || '';
 
-  // ✅ lint-safe: ne legyen "inputs conditional" warning
   const inputs = useMemo<FormInput[]>(
     () => (Array.isArray(form?.inputs) ? form.inputs : []),
     [form?.inputs]
@@ -206,6 +231,21 @@ export function FormNextToSection({
       inputs[inputs.length - 1];
 
     const selectInput = byType('select');
+    const selectOptionsFromStrapi = normalizeOptions(selectInput?.options);
+
+    // fallback: tartsd enum-kompatibilisen (pont úgy, ahogy Strapi-ban van)
+    const fallbackOptions: Array<{ label: string; value: string }> = [
+      { label: 'Balayage', value: 'Balayage' },
+      { label: 'Hajfestés', value: 'Hajfestés' },
+      { label: 'Hajápoló Kezelés', value: 'Hajápoló Kezelés' },
+      { label: 'Női Hajvágás', value: 'Női Hajvágás' },
+      { label: 'Férfi Hajvágás', value: 'Férfi Hajvágás' },
+      { label: 'Hajszárítás & Styling', value: 'Hajszárítás & Styling' },
+    ];
+
+    const serviceOptions = selectOptionsFromStrapi.length
+      ? selectOptionsFromStrapi
+      : fallbackOptions;
 
     return {
       name: {
@@ -218,20 +258,12 @@ export function FormNextToSection({
       },
       service: {
         label: norm(selectInput?.name) || 'Szolgáltatás',
-        placeholder: norm(selectInput?.placeholder) || 'Hajvágás & styling',
-        options: (Array.isArray(selectInput?.options) &&
-        selectInput?.options?.length
-          ? selectInput?.options
-          : [
-              { label: 'Hajvágás & styling', value: 'Hajvágás & styling' },
-              { label: 'Festés / Airtouch', value: 'Festés / Airtouch' },
-              { label: 'Balayage', value: 'Balayage' },
-              { label: 'Köröm', value: 'Köröm' },
-            ]) as any[],
+        placeholder: norm(selectInput?.placeholder) || 'Válassz szolgáltatást…',
+        options: serviceOptions,
       },
       email: {
         label: norm(emailInput?.name) || 'E-mail',
-        placeholder: norm(emailInput?.placeholder) || 'hello@davelopment.hu',
+        placeholder: norm(emailInput?.placeholder) || 'hello@lazarsalon.com',
       },
       message: {
         label: norm(textareaInput?.name) || 'Üzenet',
@@ -257,10 +289,9 @@ export function FormNextToSection({
       : '';
     return {
       address: norm(section?.address),
-      phone: hasText(section?.phone) ? norm(section?.phone) : '+36 1 234 5678',
-      email: hasText(section?.email)
-        ? norm(section?.email)
-        : 'info@lazarsalon.com',
+      // ✅ nincs több hardcoded fallback
+      phone: hasText(section?.phone) ? norm(section?.phone) : '',
+      email: hasText(section?.email) ? norm(section?.email) : '',
       routeUrl,
       embedUrl: deriveEmbedUrl(routeUrl),
       coverUrl: getBestMediaUrl(section?.cover),
@@ -318,31 +349,111 @@ export function FormNextToSection({
     });
   }, [social_media_icon_links]);
 
+  // -----------------------------
+  // ✅ Form state + submit logic
+  // -----------------------------
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [service, setService] = useState(''); // must match Strapi enum value
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+
+  const [submitting, setSubmitting] = useState(false);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const validate = () => {
+    const e: Record<string, string> = {};
+    if (!norm(fullName)) e.fullName = 'Kérlek add meg a neved.';
+    if (!norm(email) || !norm(email).includes('@'))
+      e.email = 'Kérlek adj meg egy érvényes e-mail címet.';
+    if (!norm(message)) e.message = 'Kérlek írd le az üzeneted.';
+    if (!norm(service)) e.service = 'Kérlek válassz szolgáltatást.';
+    setFieldErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const onSubmit = async (ev: React.FormEvent) => {
+    ev.preventDefault();
+    setSuccessMsg(null);
+    setErrorMsg(null);
+
+    if (!validate()) return;
+
+    setSubmitting(true);
+    try {
+      const page_url =
+        typeof window !== 'undefined' ? window.location.href : '';
+
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: norm(fullName),
+          email: norm(email),
+          message: norm(message),
+          phone: norm(phone),
+          service: norm(service),
+          page_url,
+          submission_status: 'new',
+        }),
+      });
+
+      const json = await res.json().catch(() => ({}));
+
+      if (!res.ok || !json?.ok) {
+        const backendErrors = json?.errors as
+          | Record<string, string>
+          | undefined;
+        if (backendErrors && typeof backendErrors === 'object') {
+          const mapped: Record<string, string> = {};
+          if (backendErrors.name) mapped.fullName = 'Kérlek add meg a neved.';
+          if (backendErrors.email)
+            mapped.email = 'Kérlek adj meg egy érvényes e-mail címet.';
+          if (backendErrors.message)
+            mapped.message = 'Kérlek írd le az üzeneted.';
+          if (backendErrors.service)
+            mapped.service = 'Kérlek válassz szolgáltatást.';
+          setFieldErrors(mapped);
+        }
+        setErrorMsg('Hiba történt az elküldés során. Kérlek próbáld újra.');
+        return;
+      }
+
+      setSuccessMsg('Köszönjük! Hamarosan válaszolunk.');
+      setFieldErrors({});
+      setFullName('');
+      setPhone('');
+      setService('');
+      setEmail('');
+      setMessage('');
+    } catch {
+      setErrorMsg('Hiba történt az elküldés során. Kérlek próbáld újra.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const cardClass = 'rounded-2xl bg-white shadow-sm border border-black/5';
   const labelClass = 'block text-sm font-medium';
   const inputBase =
     'block w-full rounded-md px-4 py-3 text-sm outline-none ring-1 ring-black/5 focus:ring-2 focus:ring-[#B2933D]/30';
+
+  const errorTextClass = 'mt-2 text-xs text-red-600';
+
+  // ✅ CTA-stílusú “primary” gomb (sötét háttér + arany/muted ikon + sweep)
+  const primaryBtnClass =
+    'group relative overflow-hidden border-none shadow-sm bg-secondary text-white hover:opacity-100';
+  const primaryBtnStyle = {
+    background: COLORS.secondary,
+  } as React.CSSProperties;
 
   return (
     <section>
       <Container className="py-16 lg:py-20">
         <div>
           <div className="text-left">
-            {/* <div
-              className="flex items-center justify-start gap-3 text-xs uppercase tracking-[0.22em]"
-              style={{ color: `${COLORS.secondary}cc` }}
-            >
-              <span
-                className="h-px w-10"
-                style={{ background: `${COLORS.muted}66` }}
-              />
-              <span>Lépjen velünk kapcsolatba</span>
-              <span
-                className="h-px w-10"
-                style={{ background: `${COLORS.muted}66` }}
-              />
-            </div> */}
-
             <h1
               className="text-left text-4xl md:text-6xl lg:text-7xl font-light text-secondary leading-tight max-w-xl"
               style={{ color: COLORS.lightblack }}
@@ -361,6 +472,7 @@ export function FormNextToSection({
           </div>
 
           <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-12 items-start">
+            {/* LEFT CARD */}
             <div className={`${cardClass} p-6 sm:p-8`}>
               <h2
                 className="text-xl font-semibold"
@@ -399,59 +511,67 @@ export function FormNextToSection({
                   </div>
                 ) : null}
 
-                <div className="flex gap-4">
-                  <div
-                    className="h-10 w-10 rounded-full flex items-center justify-center shrink-0"
-                    style={{ background: COLORS.charcoal }}
-                  >
-                    <IconPhone
-                      className="h-5 w-5"
-                      style={{ color: COLORS.muted }}
-                      stroke={1.8}
-                    />
-                  </div>
-                  <div>
-                    <p
-                      className="text-xs font-semibold"
-                      style={{ color: COLORS.muted }}
+                {/* ✅ csak ha van Strapi phone */}
+                {hasText(contact.phone) ? (
+                  <div className="flex gap-4">
+                    <div
+                      className="h-10 w-10 rounded-full flex items-center justify-center shrink-0"
+                      style={{ background: COLORS.charcoal }}
                     >
-                      {leftPhoneTitle}
-                    </p>
-                    <p
-                      className="mt-1 text-sm"
-                      style={{ color: COLORS.lightblack }}
-                    >
-                      {contact.phone}
-                    </p>
+                      <IconPhone
+                        className="h-5 w-5"
+                        style={{ color: COLORS.muted }}
+                        stroke={1.8}
+                      />
+                    </div>
+                    <div>
+                      <p
+                        className="text-xs font-semibold"
+                        style={{ color: COLORS.muted }}
+                      >
+                        {leftPhoneTitle}
+                      </p>
+                      <Link
+                        href={toTel(contact.phone)}
+                        className="mt-1 inline-block text-sm hover:underline"
+                        style={{ color: COLORS.lightblack }}
+                      >
+                        {contact.phone}
+                      </Link>
+                    </div>
                   </div>
-                </div>
+                ) : null}
 
-                <div className="flex gap-4">
-                  <div
-                    className="h-10 w-10 rounded-full flex items-center justify-center shrink-0"
-                    style={{ background: COLORS.charcoal }}
-                  >
-                    <IconMail
-                      className="h-5 w-5"
-                      style={{ color: COLORS.muted }}
-                      stroke={1.8}
-                    />
-                  </div>
-                  <div>
-                    <p
-                      className="text-xs font-semibold"
-                      style={{ color: COLORS.muted }}
+                {/* ✅ csak ha van Strapi email */}
+                {hasText(contact.email) ? (
+                  <div className="flex gap-4">
+                    <div
+                      className="h-10 w-10 rounded-full flex items-center justify-center shrink-0"
+                      style={{ background: COLORS.charcoal }}
                     >
-                      {leftEmailTitle}
-                    </p>
-                    <p
-                      className="mt-1 text-sm"
-                      style={{ color: COLORS.lightblack }}
-                    >
-                      {contact.email}
-                    </p>
+                      <IconMail
+                        className="h-5 w-5"
+                        style={{ color: COLORS.muted }}
+                        stroke={1.8}
+                      />
+                    </div>
+                    <div>
+                      <p
+                        className="text-xs font-semibold"
+                        style={{ color: COLORS.muted }}
+                      >
+                        {leftEmailTitle}
+                      </p>
+                      <Link
+                        href={`mailto:${contact.email}`}
+                        className="mt-1 inline-block text-sm hover:underline"
+                        style={{ color: COLORS.lightblack }}
+                      >
+                        {contact.email}
+                      </Link>
+                    </div>
                   </div>
-                </div>
+                ) : null}
               </div>
 
               {openingHours.length ? (
@@ -585,6 +705,7 @@ export function FormNextToSection({
               </div>
             </div>
 
+            {/* RIGHT CARD (FORM) */}
             <div className={`${cardClass} p-6 sm:p-8`}>
               <div className="flex items-center justify-between gap-4">
                 <h2
@@ -595,28 +716,45 @@ export function FormNextToSection({
                 </h2>
 
                 {bookingUrl ? (
-                  <Link href={bookingUrl} className="shrink-0">
+                  <Link
+                    href={bookingUrl}
+                    className="shrink-0"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     <Button
-                      className="h-9 px-3 rounded-md text-white hover:opacity-90 shadow-sm border-none"
-                      style={{ background: COLORS.muted }}
+                      className={`h-9 px-3 rounded-md ${primaryBtnClass}`}
+                      style={primaryBtnStyle}
                       type="button"
                     >
-                      <span className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide">
-                        <IconCalendarEvent className="h-4 w-4" stroke={2} />
+                      <span className="relative z-10 inline-flex items-center gap-2 text-xs font-semibold tracking-wide">
+                        <IconCalendarEvent
+                          className="h-4 w-4"
+                          stroke={2}
+                          style={{ color: COLORS.muted }}
+                        />
                         IDŐPONTFOGLALÁS
                       </span>
+                      <span className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-white/0 via-white/25 to-white/0" />
                     </Button>
                   </Link>
                 ) : (
                   <Button
-                    className="h-9 px-3 rounded-md text-white hover:opacity-90 shadow-sm border-none"
-                    style={{ background: COLORS.muted }}
+                    className={`h-9 px-3 rounded-md opacity-70 cursor-not-allowed ${primaryBtnClass}`}
+                    style={primaryBtnStyle}
                     type="button"
+                    disabled
+                    title="Nincs megadva booking_url a Strapi-ban"
                   >
-                    <span className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide">
-                      <IconCalendarEvent className="h-4 w-4" stroke={2} />
+                    <span className="relative z-10 inline-flex items-center gap-2 text-xs font-semibold tracking-wide">
+                      <IconCalendarEvent
+                        className="h-4 w-4"
+                        stroke={2}
+                        style={{ color: COLORS.muted }}
+                      />
                       IDŐPONTFOGLALÁS
                     </span>
+                    <span className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-white/0 via-white/25 to-white/0" />
                   </Button>
                 )}
               </div>
@@ -630,7 +768,7 @@ export function FormNextToSection({
                 </p>
               ) : null}
 
-              <form className="mt-7 space-y-5">
+              <form className="mt-7 space-y-5" onSubmit={onSubmit}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label
@@ -644,13 +782,20 @@ export function FormNextToSection({
                       <input
                         id="fullName"
                         type="text"
+                        autoComplete="name"
                         placeholder={fields.name.placeholder}
                         className={inputBase}
                         style={{
                           background: COLORS.charcoal,
                           color: COLORS.lightblack,
                         }}
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        aria-invalid={!!fieldErrors.fullName}
                       />
+                      {fieldErrors.fullName ? (
+                        <p className={errorTextClass}>{fieldErrors.fullName}</p>
+                      ) : null}
                     </div>
                   </div>
 
@@ -665,13 +810,17 @@ export function FormNextToSection({
                     <div className="mt-2">
                       <input
                         id="phone"
-                        type="text"
+                        type="tel"
+                        inputMode="tel"
+                        autoComplete="tel"
                         placeholder={fields.phone.placeholder}
                         className={inputBase}
                         style={{
                           background: COLORS.charcoal,
                           color: COLORS.lightblack,
                         }}
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
                       />
                     </div>
                   </div>
@@ -688,12 +837,14 @@ export function FormNextToSection({
                   <div className="mt-2 relative">
                     <select
                       id="service"
-                      defaultValue=""
+                      value={service}
+                      onChange={(e) => setService(e.target.value)}
                       className={`${inputBase} appearance-none pr-10`}
                       style={{
                         background: COLORS.charcoal,
                         color: COLORS.lightblack,
                       }}
+                      aria-invalid={!!fieldErrors.service}
                     >
                       <option value="" disabled>
                         {fields.service.placeholder}
@@ -707,7 +858,7 @@ export function FormNextToSection({
                             typeof opt === 'string'
                               ? opt
                               : opt?.value || opt?.label;
-                          if (!label) return null;
+                          if (!label || !value) return null;
                           return (
                             <option key={`opt-${idx}`} value={String(value)}>
                               {String(label)}
@@ -722,6 +873,9 @@ export function FormNextToSection({
                       stroke={2}
                     />
                   </div>
+                  {fieldErrors.service ? (
+                    <p className={errorTextClass}>{fieldErrors.service}</p>
+                  ) : null}
                 </div>
 
                 <div>
@@ -735,14 +889,21 @@ export function FormNextToSection({
                   <div className="mt-2">
                     <input
                       id="email"
-                      type="text"
+                      type="email"
+                      autoComplete="email"
                       placeholder={fields.email.placeholder}
                       className={inputBase}
                       style={{
                         background: COLORS.charcoal,
                         color: COLORS.lightblack,
                       }}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      aria-invalid={!!fieldErrors.email}
                     />
+                    {fieldErrors.email ? (
+                      <p className={errorTextClass}>{fieldErrors.email}</p>
+                    ) : null}
                   </div>
                 </div>
 
@@ -764,7 +925,13 @@ export function FormNextToSection({
                         background: COLORS.charcoal,
                         color: COLORS.lightblack,
                       }}
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      aria-invalid={!!fieldErrors.message}
                     />
+                    {fieldErrors.message ? (
+                      <p className={errorTextClass}>{fieldErrors.message}</p>
+                    ) : null}
                   </div>
                 </div>
 
@@ -778,6 +945,8 @@ export function FormNextToSection({
                       href={privacyUrl}
                       className="hover:underline font-medium"
                       style={{ color: COLORS.muted }}
+                      target="_blank"
+                      rel="noreferrer"
                     >
                       Adatvédelmi irányelveink
                     </Link>{' '}
@@ -785,14 +954,38 @@ export function FormNextToSection({
                   </p>
                 ) : null}
 
+                {/* ✅ CTA-stílusú submit gomb */}
                 <Button
-                  className="w-full h-11 rounded-md text-white hover:opacity-90 shadow-sm flex items-center justify-center gap-2 border-none"
-                  style={{ background: COLORS.muted }}
+                  className={`w-full h-11 rounded-md flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed ${primaryBtnClass}`}
+                  style={primaryBtnStyle}
                   type="submit"
+                  disabled={submitting}
                 >
-                  <span className="font-semibold">{fields.submit.label}</span>
-                  <IconArrowRight className="h-4 w-4" stroke={2.2} />
+                  <span className="relative z-10 inline-flex items-center gap-2 font-semibold">
+                    {submitting ? 'Küldés…' : fields.submit.label}
+                    <IconArrowRight
+                      className="h-4 w-4"
+                      stroke={2.2}
+                      style={{ color: COLORS.muted }}
+                    />
+                  </span>
+                  <span className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-white/0 via-white/25 to-white/0" />
                 </Button>
+
+                {successMsg ? (
+                  <p
+                    className="text-xs sm:text-sm font-medium"
+                    style={{ color: '#16803c' }}
+                  >
+                    {successMsg}
+                  </p>
+                ) : null}
+
+                {errorMsg ? (
+                  <p className="text-xs sm:text-sm font-medium text-red-600">
+                    {errorMsg}
+                  </p>
+                ) : null}
 
                 {socialLinks.length ? (
                   <div className="pt-4 flex flex-wrap items-center gap-2">
@@ -805,6 +998,7 @@ export function FormNextToSection({
                           target={s.target || '_self'}
                           className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold border border-black/10 bg-white hover:border-black/20"
                           style={{ color: COLORS.lightblack }}
+                          rel={s.target === '_blank' ? 'noreferrer' : undefined}
                         >
                           <Icon
                             className="h-4 w-4"

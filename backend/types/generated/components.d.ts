@@ -589,6 +589,7 @@ export interface SharedSection extends Struct.ComponentSchema {
     map_city_label: Schema.Attribute.String;
     map_route_url: Schema.Attribute.String;
     opening_hours: Schema.Attribute.Component<'shared.opening-hours', true>;
+    phone: Schema.Attribute.String;
     privacy_url: Schema.Attribute.String;
     sub_heading: Schema.Attribute.String;
     users: Schema.Attribute.Component<'shared.user', true>;

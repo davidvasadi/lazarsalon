@@ -1,0 +1,45 @@
+{
+  "kind": "collectionType",
+  "collectionName": "contacts",
+  "info": {
+    "singularName": "contact",
+    "pluralName": "contacts",
+    "displayName": "Contact"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "message": {
+      "type": "text"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "service": {
+      "type": "enumeration",
+      "enum": [
+        "Balayage",
+        "Hajfestés",
+        "Hajápoló Kezelés",
+        "Női Hajvágás",
+        "Férfi Hajvágás",
+        "Hajszárítás & Styling"
+      ]
+    },
+    "page_url": {
+      "type": "string"
+    },
+    "submission_status": {
+      "type": "enumeration",
+      "enum": ["new", "read", "archived"]
+    }
+  }
+}
