@@ -25,6 +25,8 @@ import { Container } from '@/components/container';
 
 // components/dynamic-zone/form-next-to-section.tsx (vagy ahol ez a komponensed van)
 
+// components/dynamic-zone/form-next-to-section.tsx (vagy ahol ez a komponensed van)
+
 type StrapiLinkItem = {
   id?: number;
   text?: string | null;
@@ -940,7 +942,7 @@ export function FormNextToSection({
                     className="text-[11px] sm:text-xs"
                     style={{ color: `${COLORS.secondary}bf` }}
                   >
-                    Az űrlap elküldésével hozzájárul adatai kezeléséhez az{' '}
+                    Az űrlap elküldésével hozzájárulsz adataid kezeléséhez az{' '}
                     <Link
                       href={privacyUrl}
                       className="hover:underline font-medium"
