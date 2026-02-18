@@ -91,10 +91,21 @@ function getMediaUrl(media: any): string | null {
   return null;
 }
 
+function isExternalUrl(url?: string | null) {
+  const u = (url ?? '').trim();
+  if (!u) return false;
+  if (u.startsWith('#')) return false; // anchor belső
+  return /^(https?:)?\/\//i.test(u) || /^(mailto:|tel:)/i.test(u);
+}
+
 function joinLocaleHref(locale: string, url?: string | null) {
   const u = (url ?? '').trim();
-  const path = u ? (u.startsWith('/') ? u : `/${u}`) : '/';
-  return `/${locale}${path}`;
+  if (!u) return `/${locale}`;
+  if (u.startsWith('#')) return u; // in-page anchor
+  if (isExternalUrl(u)) return u; // külső/abszolút marad
+
+  const path = u.startsWith('/') ? u : `/${u}`;
+  return `/${locale}${path}`.replace(/\/{2,}/g, '/');
 }
 
 function toTel(phone?: string | null) {
@@ -412,47 +423,65 @@ export const CTA = ({
                   <div
                     className={`grid grid-cols-1 gap-3 items-stretch ${actionGridCols}`}
                   >
-                    {primaryCta ? (
-                      <Button
-                        as={Link}
-                        href={joinLocaleHref(locale, primaryCta.URL)}
-                        variant={primaryCta.variant as any}
-                        target={(primaryCta.target ?? undefined) as any}
-                        rel={
-                          primaryCta.target === '_blank'
-                            ? ('noreferrer noopener' as any)
-                            : undefined
-                        }
-                        className="group relative overflow-hidden w-full h-12 inline-flex items-center justify-center rounded-xl bg-secondary text-white border-none px-5"
-                      >
-                        <span className="relative z-10 inline-flex items-center gap-2">
-                          {primaryCta.text}
-                          <ChevronRight className="h-4 w-4 text-muted transition-transform duration-200 group-hover:translate-x-1" />
-                        </span>
-                        <span className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-white/0 via-white/25 to-white/0" />
-                      </Button>
-                    ) : null}
+                    {primaryCta
+                      ? (() => {
+                          const href = joinLocaleHref(locale, primaryCta.URL);
+                          const external = isExternalUrl(primaryCta.URL);
+                          const target = (primaryCta.target ??
+                            undefined) as any;
+                          const rel =
+                            target === '_blank'
+                              ? ('noreferrer noopener' as any)
+                              : undefined;
+                          const Cmp: any = external ? 'a' : Link;
 
-                    {secondaryCta ? (
-                      <Button
-                        as={Link}
-                        href={joinLocaleHref(locale, secondaryCta.URL)}
-                        variant={secondaryCta.variant as any}
-                        target={(secondaryCta.target ?? undefined) as any}
-                        rel={
-                          secondaryCta.target === '_blank'
-                            ? ('noreferrer noopener' as any)
-                            : undefined
-                        }
-                        className="group relative overflow-hidden w-full h-12 inline-flex items-center justify-center rounded-xl bg-white text-lightblack border border-charcoal hover:border-secondary/40 px-5"
-                      >
-                        <span className="inline-flex items-center gap-2">
-                          {secondaryCta.text}
-                          <ChevronRight className="h-4 w-4 text-muted transition-transform duration-200 group-hover:translate-x-1" />
-                        </span>
-                        <span className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-white/0 via-white/18 to-white/0" />
-                      </Button>
-                    ) : null}
+                          return (
+                            <Button
+                              asChild
+                              variant={primaryCta.variant as any}
+                              className="group relative overflow-hidden w-full h-12 inline-flex items-center justify-center rounded-xl bg-secondary text-white border-none px-5"
+                            >
+                              <Cmp href={href} target={target} rel={rel}>
+                                <span className="relative z-10 inline-flex items-center gap-2">
+                                  {primaryCta.text}
+                                  <ChevronRight className="h-4 w-4 text-muted transition-transform duration-200 group-hover:translate-x-1" />
+                                </span>
+                                <span className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-white/0 via-white/25 to-white/0" />
+                              </Cmp>
+                            </Button>
+                          );
+                        })()
+                      : null}
+
+                    {secondaryCta
+                      ? (() => {
+                          const href = joinLocaleHref(locale, secondaryCta.URL);
+                          const external = isExternalUrl(secondaryCta.URL);
+                          const target = (secondaryCta.target ??
+                            undefined) as any;
+                          const rel =
+                            target === '_blank'
+                              ? ('noreferrer noopener' as any)
+                              : undefined;
+                          const Cmp: any = external ? 'a' : Link;
+
+                          return (
+                            <Button
+                              asChild
+                              variant={secondaryCta.variant as any}
+                              className="group relative overflow-hidden w-full h-12 inline-flex items-center justify-center rounded-xl bg-white text-lightblack border border-charcoal hover:border-secondary/40 px-5"
+                            >
+                              <Cmp href={href} target={target} rel={rel}>
+                                <span className="inline-flex items-center gap-2">
+                                  {secondaryCta.text}
+                                  <ChevronRight className="h-4 w-4 text-muted transition-transform duration-200 group-hover:translate-x-1" />
+                                </span>
+                                <span className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-white/0 via-white/18 to-white/0" />
+                              </Cmp>
+                            </Button>
+                          );
+                        })()
+                      : null}
 
                     {phone ? (
                       <motion.div
