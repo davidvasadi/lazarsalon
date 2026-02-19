@@ -127,7 +127,7 @@ export const AIToast = () => {
 
           {/* Link */}
           <a
-            href="https://lazarsalon.com/privacy"
+            href="https://lazarsalon.com/adatkezelesi-tajekoztato"
             target="_blank"
             rel="noopener noreferrer"
             className={clsx(
