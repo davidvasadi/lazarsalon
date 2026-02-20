@@ -15,14 +15,16 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 
+// <-- igazítsd a pathot ha máshol van
 import { Button } from '../elements/button';
 import { Heading } from '../elements/heading';
 import { Subheading } from '../elements/subheading';
+import { AmbientColor } from '@/components/decorations/ambient-color';
 
 /* ──────────────────────────────────────────────────────────────
-  Constants (keep it simple)
+  Constants
 ────────────────────────────────────────────────────────────── */
 const GOLD = '#B4943E';
 const DEFAULT_SCROLL_ID = 'services';
@@ -30,7 +32,6 @@ const DEFAULT_SCROLL_ID = 'services';
 const BG_IMG_CLASS =
   'object-cover filter grayscale saturate-0 contrast-125 brightness-[0.72]';
 
-/* EXACT old overlay classes (no teal, no extras) */
 const OVERLAY_GRADIENT_CLASS =
   'bg-gradient-to-r from-[#1D1D1E]/95 via-[#1D1D1E]/80 to-transparent';
 const OVERLAY_DARK_CLASS = 'bg-[#1D1D1E]/20';
@@ -51,26 +52,26 @@ const toAbs = (u?: string | null) => {
 };
 
 /* ──────────────────────────────────────────────────────────────
-  URL helpers (same behavior as CTA component)
+  URL helpers
 ────────────────────────────────────────────────────────────── */
 function isExternalUrl(url?: string | null) {
   const u = (url ?? '').trim();
   if (!u) return false;
-  if (u.startsWith('#')) return false; // anchor is internal
+  if (u.startsWith('#')) return false;
   return /^(https?:)?\/\//i.test(u) || /^(mailto:|tel:)/i.test(u);
 }
 
 function joinLocaleHref(locale: string, url?: string | null) {
   const u = (url ?? '').trim();
   if (!u) return `/${locale}`;
-  if (u.startsWith('#')) return u; // allow in-page anchors
-  if (isExternalUrl(u)) return u; // absolute/external stays as-is
+  if (u.startsWith('#')) return u;
+  if (isExternalUrl(u)) return u;
   const path = u.startsWith('/') ? u : `/${u}`;
   return `/${locale}${path}`.replace(/\/{2,}/g, '/');
 }
 
 /* ──────────────────────────────────────────────────────────────
-  Tiny icons (avoid lucide export mismatch)
+  Tiny icons
 ────────────────────────────────────────────────────────────── */
 function StarGlyph(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -99,13 +100,65 @@ function LocationGlyph(props: React.SVGProps<SVGSVGElement>) {
 }
 
 /* ──────────────────────────────────────────────────────────────
+  Theme-color driver (MINIMAL)
+  Hero látszik => dark
+  Hero után => világos
+────────────────────────────────────────────────────────────── */
+function setThemeColor(color: string) {
+  const metas = Array.from(
+    document.querySelectorAll('meta[name="theme-color"]')
+  ) as HTMLMetaElement[];
+
+  if (metas.length === 0) {
+    const m = document.createElement('meta');
+    m.setAttribute('name', 'theme-color');
+    m.setAttribute('content', color);
+    document.head.appendChild(m);
+    return;
+  }
+
+  metas.forEach((m) => m.setAttribute('content', color));
+}
+
+function ThemeColorOnHero({
+  heroId,
+  heroColor,
+  pageColor,
+}: {
+  heroId: string;
+  heroColor: string;
+  pageColor: string;
+}) {
+  useEffect(() => {
+    const hero = document.getElementById(heroId);
+    if (!hero) return;
+
+    // init
+    setThemeColor(heroColor);
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        const visible = entry.isIntersecting && entry.intersectionRatio > 0;
+        setThemeColor(visible ? heroColor : pageColor);
+      },
+      { threshold: [0, 0.01] }
+    );
+
+    io.observe(hero);
+    return () => io.disconnect();
+  }, [heroId, heroColor, pageColor]);
+
+  return null;
+}
+
+/* ──────────────────────────────────────────────────────────────
   Types
 ────────────────────────────────────────────────────────────── */
 type CTA = {
   id: number;
   text: string;
   URL: string;
-  target?: string | null; // "_blank"
+  target?: string | null;
   variant?: 'primary' | 'outline' | 'muted' | 'simple' | string;
 };
 
@@ -134,14 +187,8 @@ type Props = {
   CTAs: CTA[];
   locale: string;
   image?: StrapiMediaImage | null;
-
-  /** ÚJ: Strapi hero.duration (pl. "45 – 120 perc") */
   duration?: string | null;
-
-  // Scroll cue target (optional). If not found -> scroll to next section.
   scrollToId?: string;
-
-  // Optional subtle parallax
   parallax?: boolean;
 };
 
@@ -160,7 +207,7 @@ export const Hero = ({
 
   const pathname = usePathname() || '';
   const parts = pathname.split('/').filter(Boolean);
-  const isHome = parts.length <= 1; // pl. "/hu" -> ["hu"] => home
+  const isHome = parts.length <= 1;
 
   const homeLabel = locale?.toLowerCase().startsWith('en')
     ? 'Home'
@@ -189,17 +236,10 @@ export const Hero = ({
 
   const instant = { duration: 0.01 };
 
-  /* ──────────────────────────────────────────────────────────────
-    Framer parallax (subtle) — scroll -> background y
-  ─────────────────────────────────────────────────────────────── */
   const { scrollY } = useScroll();
-  const bgY = useTransform(scrollY, [0, 900], [0, -120]); // subtle lift
+  const bgY = useTransform(scrollY, [0, 900], [0, -120]);
 
-  /* ──────────────────────────────────────────────────────────────
-    Scroll cue: next component (id -> fallback next sibling)
-  ─────────────────────────────────────────────────────────────── */
   const onScrollCue = useCallback(() => {
-    // 1) If id exists and element found -> scroll to it
     if (scrollToId) {
       const el = document.getElementById(scrollToId);
       if (el) {
@@ -207,14 +247,10 @@ export const Hero = ({
         return;
       }
     }
-    // 2) Fallback: next sibling of hero section
     const next = sectionRef.current?.nextElementSibling as HTMLElement | null;
     next?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [scrollToId]);
 
-  /* ──────────────────────────────────────────────────────────────
-    CTA button styles (match old size/behavior)
-  ─────────────────────────────────────────────────────────────── */
   const primaryCtaClass =
     'group bg-white/10 backdrop-blur-sm border border-white/20 text-white px-8 py-4 rounded-lg font-light flex items-center justify-center gap-2 ' +
     'hover:bg-white hover:text-[#1D1D1E] transition-all duration-300 transform hover:scale-[1.02]';
@@ -223,11 +259,6 @@ export const Hero = ({
     'group border border-white/20 text-white px-8 py-4 rounded-lg font-light flex items-center justify-center gap-2 ' +
     'hover:bg-white/10 transition-all duration-300';
 
-  // CTA alatti finom elválasztó (secondary token)
-  const dividerClass =
-    'hidden sm:block mt-10 h-px w-full max-w-[560px] bg-secondary opacity-30';
-
-  // Bottom info clusters — méret mobilon kisebb, színekhez ne nyúlunk
   const infoTitleClass =
     'text-[12px] sm:text-sm font-light text-muted opacity-90 flex items-center gap-2';
   const infoSubClass =
@@ -236,12 +267,28 @@ export const Hero = ({
   const dur = (duration ?? '').trim();
   const hasDuration = dur.length > 0;
 
+  // ezek csak meta theme-colorhoz — vizuális “notch szín” most a hero backgroundból jön!
+  const HERO_THEME = '#141414';
+  const PAGE_THEME = '#F5F5F5';
+
   return (
     <section
+      id="hero"
       ref={sectionRef}
-      className="relative isolate min-h-[100svh] overflow-hidden bg-black"
+      className={
+        // pt safe-area: a tartalom nem megy fel a notch alá,
+        // de a háttér (absolute) igen, ezért NINCS külön cap szükség
+        'relative isolate min-h-[100svh] overflow-hidden bg-[#1D1D1E] pt-[env(safe-area-inset-top)]'
+      }
     >
-      {/* Background (single) */}
+      {/* ONLY meta theme-color handling */}
+      <ThemeColorOnHero
+        heroId="hero"
+        heroColor={HERO_THEME}
+        pageColor={PAGE_THEME}
+      />
+
+      {/* Background */}
       <motion.div
         className="absolute inset-0 -z-10 will-change-transform"
         aria-hidden="true"
@@ -260,11 +307,10 @@ export const Hero = ({
           <div className="absolute inset-0 bg-black" />
         )}
 
-        {/* EXACT old overlay stack */}
         <div className={`absolute inset-0 ${OVERLAY_GRADIENT_CLASS}`} />
         <div className={`absolute inset-0 ${OVERLAY_DARK_CLASS}`} />
 
-        {/* Left animated line (ONLY this one) — white */}
+        {/* Left animated line */}
         <motion.div
           className="absolute left-0 top-1/2 h-px bg-gradient-to-r from-white/80 to-transparent"
           initial={
@@ -281,7 +327,15 @@ export const Hero = ({
         />
       </motion.div>
 
-      {/* Right side static label: EST. 2010 (NO gold line here) */}
+      {/* Ambient glow — MUST be inside hero so notch area matches */}
+      <div className="absolute inset-0 z-10 pointer-events-none">
+        {/* AmbientColor eredetileg z-40 volt; itt a hero-n belül legyen finomabb */}
+        <div className="absolute inset-0 opacity-80">
+          <AmbientColor />
+        </div>
+      </div>
+
+      {/* Right side static label */}
       <motion.div
         className="pointer-events-none absolute right-2 top-[10%] z-20 -translate-y-1/2 transform-gpu sm:right-6 md:top-[58%]"
         initial={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
@@ -296,9 +350,9 @@ export const Hero = ({
       </motion.div>
 
       {/* Content */}
-      <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-7xl items-center px-4 py-16 md:px-8">
+      <div className="relative z-20 mx-auto flex min-h-[100svh] max-w-7xl items-center px-4 py-16 md:px-8">
         <div className="w-full max-w-3xl">
-          {/* Heading (delay ~0.4) */}
+          {/* Heading */}
           <motion.div
             initial={
               reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }
@@ -307,7 +361,6 @@ export const Hero = ({
             transition={reduceMotion ? instant : { duration: 1, delay: 0.4 }}
             className="relative"
           >
-            {/* ✅ Breadcrumb (nem jelenik meg a kezdőlapon) */}
             {!isHome ? (
               <nav aria-label="Breadcrumb" className="mb-3">
                 <ol className="flex flex-wrap items-center gap-2 text-xs font-light text-white/60 sm:text-sm">
@@ -355,7 +408,7 @@ export const Hero = ({
             </Heading>
           </motion.div>
 
-          {/* Subheading (delay ~0.6) */}
+          {/* Subheading */}
           <motion.div
             initial={
               reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }
@@ -369,7 +422,7 @@ export const Hero = ({
             </Subheading>
           </motion.div>
 
-          {/* CTAs (delay ~0.8) */}
+          {/* CTAs */}
           <motion.div
             initial={
               reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }
@@ -439,7 +492,7 @@ export const Hero = ({
             })}
           </motion.div>
 
-          {/* ÚJ: Duration (gombok alatt) */}
+          {/* Duration */}
           {hasDuration ? (
             <motion.div
               initial={
@@ -465,24 +518,13 @@ export const Hero = ({
               </div>
             </motion.div>
           ) : null}
-
-          {/* CTA divider line (secondary) */}
-          {/* <motion.div
-            initial={
-              reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }
-            }
-            animate={{ opacity: 1, y: 0 }}
-            transition={reduceMotion ? instant : { duration: 0.9, delay: 0.95 }}
-            className={dividerClass}
-          /> */}
         </div>
       </div>
 
-      {/* Bottom info clusters (mobile: side-by-side, smaller) */}
+      {/* Bottom info clusters */}
       <div className="absolute inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 sm:bottom-10">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
           <div className="flex items-end justify-between gap-3">
-            {/* Left: Google rating */}
             <motion.div
               initial={
                 reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }
@@ -507,7 +549,6 @@ export const Hero = ({
               </div>
             </motion.div>
 
-            {/* Right: Location */}
             <motion.div
               initial={
                 reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }
@@ -534,7 +575,7 @@ export const Hero = ({
         </div>
       </div>
 
-      {/* Scroll cue (moved LOWER) */}
+      {/* Scroll cue */}
       <div className="absolute left-1/2 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-30 -translate-x-1/2 sm:bottom-8">
         <motion.button
           type="button"

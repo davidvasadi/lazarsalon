@@ -9,7 +9,7 @@ import { SlugProvider } from './context/SlugContext';
 import { Preview } from '@/components/preview';
 
 export const viewport: Viewport = {
-  themeColor: '#292624',
+  themeColor: '#141414',
 };
 
 export async function generateStaticParams() {

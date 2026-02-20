@@ -5,7 +5,7 @@ export default function PageContent({ pageData }: { pageData: any }) {
   const dynamicZone = pageData?.dynamic_zone;
   return (
     <div className="relative overflow-hidden w-full">
-      <AmbientColor />
+      {/* <AmbientColor /> */}
       {dynamicZone && (
         <DynamicZoneManager
           dynamicZone={dynamicZone}
