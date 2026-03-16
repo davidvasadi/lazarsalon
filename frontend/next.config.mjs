@@ -6,9 +6,29 @@ const STRAPI_URL =
   'http://localhost:1337';
 
 const u = new URL(STRAPI_URL);
-const protocol = u.protocol.replace(':', ''); // "http" | "https"
-const hostname = u.hostname;                 // "localhost" | "api.domain.hu"
-const port = u.port || undefined;            // "1337" | undefined
+const protocol = u.protocol.replace(':', '');
+const hostname = u.hostname;
+const port = u.port || undefined;
+
+// ✅ Ezek MINDIG működnek, Strapi-tól függetlenül
+const staticRedirects = [
+  // www → nem-www (LEGFONTOSABB!)
+  {
+    source: '/:path*',
+    has: [{ type: 'host', value: 'www.lazarsalon.com' }],
+    destination: 'https://lazarsalon.com/:path*',
+    permanent: true,
+  },
+  // Régi React URL-ek → új Next.js URL-ek
+  { source: '/csapatunk',       destination: '/hu/csapat',         permanent: true },
+  { source: '/szolgaltatasok',  destination: '/hu/szolgaltatasok', permanent: true },
+  { source: '/rolunk',          destination: '/hu',                permanent: true },
+  { source: '/gyik',            destination: '/hu',                permanent: true },
+  { source: '/idopontfoglalas', destination: '/hu/kapcsolat',      permanent: true },
+  { source: '/instagram',       destination: '/hu',                permanent: true },
+  // Gyökér átirányítás
+  { source: '/',                destination: '/hu',                permanent: false },
+];
 
 const nextConfig = {
   turbopack: {
@@ -29,22 +49,23 @@ const nextConfig = {
   pageExtensions: ['ts', 'tsx'],
 
   async redirects() {
-    let redirections = [];
+    // ✅ Strapi-s dinamikus átirányítások
+    let dynamicRedirects = [];
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/redirections`);
       const result = await res.json();
 
-      const redirectItems = (result?.data ?? []).map(({ source, destination }) => ({
+      dynamicRedirects = (result?.data ?? []).map(({ source, destination }) => ({
         source: `/:locale${source}`,
         destination: `/:locale${destination}`,
         permanent: false,
       }));
-
-      redirections = redirections.concat(redirectItems);
-      return redirections;
     } catch (error) {
-      return [];
+      console.warn('⚠️ Strapi redirections nem tölthetők be:', error.message);
     }
+
+    // ✅ Statikus mindig előre, dinamikus utána
+    return [...staticRedirects, ...dynamicRedirects];
   },
 };
 
