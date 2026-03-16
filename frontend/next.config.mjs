@@ -10,15 +10,7 @@ const protocol = u.protocol.replace(':', '');
 const hostname = u.hostname;
 const port = u.port || undefined;
 
-// ✅ Ezek MINDIG működnek, Strapi-tól függetlenül
 const staticRedirects = [
-  // www → nem-www (LEGFONTOSABB!)
-  {
-    source: '/:path*',
-    has: [{ type: 'host', value: 'www.lazarsalon.com' }],
-    destination: 'https://lazarsalon.com/:path*',
-    permanent: true,
-  },
   // Régi React URL-ek → új Next.js URL-ek
   { source: '/csapatunk',       destination: '/hu/csapat',         permanent: true },
   { source: '/szolgaltatasok',  destination: '/hu/szolgaltatasok', permanent: true },
@@ -49,7 +41,6 @@ const nextConfig = {
   pageExtensions: ['ts', 'tsx'],
 
   async redirects() {
-    // ✅ Strapi-s dinamikus átirányítások
     let dynamicRedirects = [];
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/redirections`);
@@ -64,7 +55,6 @@ const nextConfig = {
       console.warn('⚠️ Strapi redirections nem tölthetők be:', error.message);
     }
 
-    // ✅ Statikus mindig előre, dinamikus utána
     return [...staticRedirects, ...dynamicRedirects];
   },
 };
