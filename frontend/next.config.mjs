@@ -19,7 +19,7 @@ const staticRedirects = [
   { source: '/idopontfoglalas', destination: '/hu/kapcsolat',      permanent: true },
   { source: '/instagram',       destination: '/hu',                permanent: true },
   // Gyökér átirányítás
-  { source: '/',                destination: '/hu',                permanent: false },
+  { source: '/',                destination: '/hu',                permanent: true },
 ];
 
 const nextConfig = {
