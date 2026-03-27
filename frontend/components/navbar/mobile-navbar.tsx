@@ -30,6 +30,8 @@ import { cn } from '@/lib/utils';
 
 // mobile-navbar.tsx
 
+// mobile-navbar.tsx
+
 const STRAPI_BASE = (
   process.env.NEXT_PUBLIC_STRAPI_URL ??
   process.env.NEXT_PUBLIC_API_URL ??
@@ -59,11 +61,18 @@ type Props = {
   locale: string;
 };
 
-const navHref = (locale: string, url: string) =>
-  url === '/'
-    ? `/${locale}`
-    : `/${locale}${url.startsWith('/') ? url : `/${url}`}`;
+const navHref = (locale: string, url: string) => {
+  if (!url) return `/${locale}`;
 
+  // külső link (pl alteg booking)
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+
+  if (url === '/') return `/${locale}`;
+
+  return `/${locale}${url.startsWith('/') ? url : `/${url}`}`;
+};
 const pageHref = (locale: string, p: PageLike) => `/${locale}/${p.slug}`;
 
 const isBookingText = (t?: string | null) => {
