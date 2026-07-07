@@ -32,6 +32,8 @@ import { cn } from '@/lib/utils';
 
 // mobile-navbar.tsx
 
+// mobile-navbar.tsx
+
 const STRAPI_BASE = (
   process.env.NEXT_PUBLIC_STRAPI_URL ??
   process.env.NEXT_PUBLIC_API_URL ??
@@ -906,7 +908,7 @@ export function UnifiedNavbar({
                             </div>
 
                             <div className="space-y-3">
-                              {featuredPages.map((p) => {
+                              {featuredPages.map((p, index) => {
                                 const hero = heroForPage(p);
                                 const href = pageHref(locale, p);
                                 const cover =
@@ -931,7 +933,10 @@ export function UnifiedNavbar({
                                     <div className="relative overflow-hidden rounded-xl">
                                       {cover ? (
                                         <div
-                                          className="h-28 w-full bg-cover bg-center"
+                                          className={cn(
+                                            'h-28 w-full bg-cover',
+                                            index === 0 ? 'bg-top' : 'bg-center'
+                                          )}
                                           style={{
                                             backgroundImage: `url(${cover})`,
                                           }}
