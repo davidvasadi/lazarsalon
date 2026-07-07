@@ -34,6 +34,8 @@ import { cn } from '@/lib/utils';
 
 // mobile-navbar.tsx
 
+// mobile-navbar.tsx
+
 const STRAPI_BASE = (
   process.env.NEXT_PUBLIC_STRAPI_URL ??
   process.env.NEXT_PUBLIC_API_URL ??
@@ -933,12 +935,16 @@ export function UnifiedNavbar({
                                     <div className="relative overflow-hidden rounded-xl">
                                       {cover ? (
                                         <div
-                                          className={cn(
-                                            'h-28 w-full bg-cover',
-                                            index === 0 ? 'bg-top' : 'bg-center'
-                                          )}
+                                          className="h-28 w-full bg-cover"
                                           style={{
                                             backgroundImage: `url(${cover})`,
+                                            // portré borítók: fej/haj a felső harmadban -> ~25%.
+                                            // az utolsó kártya máshogy komponált (25%-nál csak
+                                            // a fejtető látszana), ezért az marad center-en.
+                                            backgroundPosition:
+                                              index === featuredPages.length - 1
+                                                ? 'center'
+                                                : 'center 25%',
                                           }}
                                         />
                                       ) : (
