@@ -420,14 +420,12 @@ export function Pricing({
   sub_heading,
   plans,
   filterByPageSlug,
-  stickyBar = true,
 }: {
   section_id?: string | null;
   heading: string;
   sub_heading?: string | null;
   plans: any[];
   filterByPageSlug?: string;
-  stickyBar?: boolean;
 }) {
   const reduce = useReducedMotion();
   const detailRef = useRef<HTMLDivElement | null>(null);
@@ -483,26 +481,8 @@ export function Pricing({
       initial={reduce ? false : 'hidden'}
       whileInView={reduce ? undefined : 'show'}
       viewport={VIEWPORT}
-      className={cn(
-        // ✅ mobilon extra bottom space a FIX bar magasságára
-        'relative pt-14 pb-44 md:pt-20 md:pb-24 scroll-mt-24',
-        !stickyBar && 'pb-14 md:pb-24'
-      )}
+      className="relative pt-14 pb-14 md:pt-20 md:pb-24 scroll-mt-24"
     >
-      {/* ✅ mobil FIX sticky bar: ugyanaz a max-w + px, mint a Container */}
-      {stickyBar && current ? (
-        <div className="lg:hidden fixed inset-x-0 bottom-3 z-40 pointer-events-none">
-          <div
-            className={cn(
-              'mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8',
-              'pointer-events-auto pb-[env(safe-area-inset-bottom)]'
-            )}
-          >
-            <StickyBar plan={current} />
-          </div>
-        </div>
-      ) : null}
-
       <Container>
         <div className="mb-8 md:mb-10">
           <WriteInHeading
@@ -868,78 +848,5 @@ function Detail({ plan }: { plan: Plan }) {
         </div>
       </div>
     </div>
-  );
-}
-
-function StickyBar({ plan }: { plan: Plan }) {
-  const reduce = useReducedMotion();
-
-  const price = formatPrice(plan?.price);
-  const duration = (plan?.number ?? '').toString().trim();
-  const ctaButtons = getCtaButtons(plan);
-
-  return (
-    <motion.div
-      initial={reduce ? false : { opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={reduce ? { duration: 0 } : { duration: 0.24, ease: EASE }}
-      className={cn(
-        'w-full overflow-hidden rounded-2xl border border-black/10 bg-white',
-        'shadow-[0_18px_55px_rgba(0,0,0,0.18)]',
-        'p-4 md:p-5'
-      )}
-    >
-      <div className="min-w-0">
-        <div className="text-xs font-semibold tracking-wide text-secondary">
-          Kiválasztott
-        </div>
-
-        <div
-          className={cn(
-            'mt-1 text-sm font-semibold text-lightblack leading-snug',
-            'break-words [overflow-wrap:anywhere]',
-            'line-clamp-2'
-          )}
-        >
-          {plan?.name ?? ''}
-        </div>
-
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-          <div className="text-xs font-semibold text-secondary">
-            {price ? price : 'Árajánlat'}
-          </div>
-
-          {duration ? (
-            <div className="min-w-0 flex items-center gap-1.5 text-xs text-secondary">
-              <Clock3 className="h-3.5 w-3.5 text-muted shrink-0" />
-              <span className="min-w-0 break-words [overflow-wrap:anywhere]">
-                {duration}
-              </span>
-            </div>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="mt-4 flex gap-2">
-        {ctaButtons.map((b, i) => (
-          <a
-            key={i}
-            href={b.href}
-            target={b.target}
-            rel={b.target === '_blank' ? 'noopener noreferrer' : undefined}
-            className={cn(
-              'inline-flex flex-1 items-center justify-center gap-2 rounded-xl',
-              'px-4 py-3 text-xs font-semibold transition',
-              i === 0
-                ? 'bg-lightblack text-charcoal hover:opacity-95'
-                : 'bg-white border border-black/10 text-lightblack hover:bg-black/5'
-            )}
-          >
-            {b.text}
-            <ChevronRight className="h-3.5 w-3.5" />
-          </a>
-        ))}
-      </div>
-    </motion.div>
   );
 }
