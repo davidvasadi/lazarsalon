@@ -873,7 +873,7 @@ export interface ApiPlanPlan extends Struct.CollectionTypeSchema {
     name: Schema.Attribute.String;
     number: Schema.Attribute.String;
     perks: Schema.Attribute.Component<'shared.perks', true>;
-    price: Schema.Attribute.Integer;
+    price: Schema.Attribute.String;
     product: Schema.Attribute.Relation<'manyToOne', 'api::product.product'>;
     publishedAt: Schema.Attribute.DateTime;
     sub_text: Schema.Attribute.String;

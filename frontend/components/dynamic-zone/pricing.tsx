@@ -98,7 +98,7 @@ type Plan = {
   documentId?: string;
   name?: string | null;
   cover?: any;
-  price?: number | null;
+  price?: string | null;
   perks?: Perk[];
   additional_perks?: Perk[];
   description?: string | null;
@@ -206,17 +206,8 @@ function normalizePlan(raw: any): Plan {
   };
 }
 
-function formatHuf(n?: number | null) {
-  if (typeof n !== 'number' || !Number.isFinite(n)) return '';
-  try {
-    return new Intl.NumberFormat('hu-HU', {
-      style: 'currency',
-      currency: 'HUF',
-      maximumFractionDigits: 0,
-    }).format(n);
-  } catch {
-    return `${Math.round(n)} Ft`;
-  }
+function formatPrice(p?: string | null) {
+  return (p ?? '').toString().trim();
 }
 
 function safeHref(u?: string | null) {
@@ -541,10 +532,8 @@ export function Pricing({
                         {filtered.map((p, idx) => {
                           const isActive = idx === selected;
                           const Icon = pickIcon(p.name);
-                          const price = formatHuf(p.price);
-                          const duration = (p.number ?? p.sub_text ?? '')
-                            .toString()
-                            .trim();
+                          const price = formatPrice(p.price);
+                          const duration = (p.number ?? '').toString().trim();
                           const cover = getPlanCover(p);
 
                           return (
@@ -730,8 +719,8 @@ function Detail({ plan }: { plan: Plan }) {
   const reduce = useReducedMotion();
 
   const Icon = pickIcon(plan?.name);
-  const price = formatHuf(plan?.price);
-  const duration = (plan?.number ?? plan?.sub_text ?? '').toString().trim();
+  const price = formatPrice(plan?.price);
+  const duration = (plan?.number ?? '').toString().trim();
 
   const href = safeHref(plan?.CTA?.URL);
   const target = safeTarget(plan?.CTA?.target);
@@ -870,8 +859,8 @@ function Detail({ plan }: { plan: Plan }) {
 function StickyBar({ plan }: { plan: Plan }) {
   const reduce = useReducedMotion();
 
-  const price = formatHuf(plan?.price);
-  const duration = (plan?.number ?? plan?.sub_text ?? '').toString().trim();
+  const price = formatPrice(plan?.price);
+  const duration = (plan?.number ?? '').toString().trim();
   const href = safeHref(plan?.CTA?.URL);
   const target = safeTarget(plan?.CTA?.target);
   const ctaText = (plan?.CTA?.text ?? 'Időpontfoglalás').toString().trim();

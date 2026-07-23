@@ -21,7 +21,7 @@
       "allowedTypes": ["images", "files", "videos", "audios"]
     },
     "price": {
-      "type": "integer"
+      "type": "string"
     },
     "sub_text": {
       "type": "string"

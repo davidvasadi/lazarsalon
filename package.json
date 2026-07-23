@@ -8,7 +8,8 @@
     "check:format": "prettier . --check --cache",
     "fix:format": "prettier . --write --cache",
     "fix": "npm run fix:format",
-    "lint-staged": "lint-staged"
+    "lint-staged": "lint-staged",
+    "dev": "concurrently -k -n STRAPI,NEXT -c yellow,cyan \"npm run develop --prefix backend\" \"npm run dev --prefix frontend\""
   },
   "dependencies": {
     "@types/node": "^22.5.2",
