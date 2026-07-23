@@ -33,7 +33,7 @@
     "CTA": {
       "type": "component",
       "component": "shared.button",
-      "repeatable": false
+      "repeatable": true
     },
     "perks": {
       "type": "component",

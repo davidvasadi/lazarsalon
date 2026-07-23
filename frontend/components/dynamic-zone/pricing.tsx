@@ -17,7 +17,6 @@ import {
   Sparkles,
 } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Container } from '../container';
@@ -106,7 +105,7 @@ type Plan = {
   sub_text?: string | null;
   number?: string | null;
   featured?: boolean;
-  CTA?: CTA | null;
+  CTA?: CTA[] | null;
   pages?: any;
   [k: string]: any;
 };
@@ -193,7 +192,9 @@ function normalizePlan(raw: any): Plan {
     .map((x) => pickAttrs<Perk>(x))
     .filter(Boolean);
 
-  const CTA = p?.CTA ? (pickAttrs<CTA>(p.CTA) as CTA) : null;
+  const CTA = asArray<CTA>(p?.CTA)
+    .map((x) => pickAttrs<CTA>(x))
+    .filter(Boolean);
 
   return {
     ...p,
@@ -208,6 +209,20 @@ function normalizePlan(raw: any): Plan {
 
 function formatPrice(p?: string | null) {
   return (p ?? '').toString().trim();
+}
+
+type CtaBtn = { href: string; target?: string; text: string };
+
+function getCtaButtons(plan?: Plan | null): CtaBtn[] {
+  const list = Array.isArray(plan?.CTA) ? (plan!.CTA as CTA[]) : [];
+  if (!list.length) {
+    return [{ href: '#', target: undefined, text: 'Időpontfoglalás' }];
+  }
+  return list.map((c) => ({
+    href: safeHref(c?.URL),
+    target: safeTarget(c?.target),
+    text: (c?.text ?? '').toString().trim() || 'Időpontfoglalás',
+  }));
 }
 
 function safeHref(u?: string | null) {
@@ -699,12 +714,6 @@ export function Pricing({
                       </motion.div>
                     </AnimatePresence>
                   </div>
-
-                  {stickyBar && current ? (
-                    <div className="hidden lg:block mt-3 md:mt-4 sticky bottom-3">
-                      <StickyBar plan={current} />
-                    </div>
-                  ) : null}
                 </motion.div>
               </motion.div>
             </motion.div>
@@ -722,9 +731,7 @@ function Detail({ plan }: { plan: Plan }) {
   const price = formatPrice(plan?.price);
   const duration = (plan?.number ?? '').toString().trim();
 
-  const href = safeHref(plan?.CTA?.URL);
-  const target = safeTarget(plan?.CTA?.target);
-  const ctaText = (plan?.CTA?.text ?? 'Időpontfoglalás').toString().trim();
+  const ctaButtons = getCtaButtons(plan);
 
   const cover = getPlanCover(plan);
 
@@ -822,30 +829,38 @@ function Detail({ plan }: { plan: Plan }) {
       ) : null}
 
       <div className="mt-6">
-        <motion.div
-          whileHover={reduce ? undefined : { y: -0.5 }}
-          whileTap={reduce ? undefined : { scale: 0.995 }}
-          transition={
-            reduce
-              ? { duration: 0 }
-              : { type: 'spring', stiffness: 420, damping: 30 }
-          }
-        >
-          <Link
-            href={href}
-            target={target}
-            className={cn(
-              'group inline-flex w-full items-center justify-center gap-2',
-              'rounded-xl px-5 py-3 text-sm font-semibold',
-              'bg-lightblack text-charcoal',
-              'transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/10',
-              'hover:opacity-[0.96]'
-            )}
-          >
-            {ctaText}
-            <ChevronRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-          </Link>
-        </motion.div>
+        <div className="flex flex-wrap gap-2">
+          {ctaButtons.map((b, i) => (
+            <motion.div
+              key={i}
+              className="flex-1 min-w-[160px]"
+              whileHover={reduce ? undefined : { y: -0.5 }}
+              whileTap={reduce ? undefined : { scale: 0.995 }}
+              transition={
+                reduce
+                  ? { duration: 0 }
+                  : { type: 'spring', stiffness: 420, damping: 30 }
+              }
+            >
+              <a
+                href={b.href}
+                target={b.target}
+                rel={b.target === '_blank' ? 'noopener noreferrer' : undefined}
+                className={cn(
+                  'group inline-flex w-full items-center justify-center gap-2',
+                  'rounded-xl px-5 py-3 text-sm font-semibold',
+                  'transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/10',
+                  i === 0
+                    ? 'bg-lightblack text-charcoal hover:opacity-[0.96]'
+                    : 'bg-white border border-black/10 text-lightblack hover:bg-black/5'
+                )}
+              >
+                {b.text}
+                <ChevronRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+              </a>
+            </motion.div>
+          ))}
+        </div>
 
         <div className="mt-3 text-xs text-secondary">
           Tipp: ha bizonytalan vagy, írj rövid üzenetet – segítünk a
@@ -861,9 +876,7 @@ function StickyBar({ plan }: { plan: Plan }) {
 
   const price = formatPrice(plan?.price);
   const duration = (plan?.number ?? '').toString().trim();
-  const href = safeHref(plan?.CTA?.URL);
-  const target = safeTarget(plan?.CTA?.target);
-  const ctaText = (plan?.CTA?.text ?? 'Időpontfoglalás').toString().trim();
+  const ctaButtons = getCtaButtons(plan);
 
   return (
     <motion.div
@@ -907,18 +920,26 @@ function StickyBar({ plan }: { plan: Plan }) {
         </div>
       </div>
 
-      <Link
-        href={href}
-        target={target}
-        className={cn(
-          'mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl',
-          'px-4 py-3 text-xs font-semibold',
-          'bg-lightblack text-charcoal transition hover:opacity-95'
-        )}
-      >
-        {ctaText}
-        <ChevronRight className="h-3.5 w-3.5" />
-      </Link>
+      <div className="mt-4 flex gap-2">
+        {ctaButtons.map((b, i) => (
+          <a
+            key={i}
+            href={b.href}
+            target={b.target}
+            rel={b.target === '_blank' ? 'noopener noreferrer' : undefined}
+            className={cn(
+              'inline-flex flex-1 items-center justify-center gap-2 rounded-xl',
+              'px-4 py-3 text-xs font-semibold transition',
+              i === 0
+                ? 'bg-lightblack text-charcoal hover:opacity-95'
+                : 'bg-white border border-black/10 text-lightblack hover:bg-black/5'
+            )}
+          >
+            {b.text}
+            <ChevronRight className="h-3.5 w-3.5" />
+          </a>
+        ))}
+      </div>
     </motion.div>
   );
 }
