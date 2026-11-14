@@ -73,13 +73,12 @@ export function generateMetadataObject(
     ? strapiImage(seo.metaImage.url)
     : undefined;
 
-  // ✅ canonical csak akkor, ha tényleg tudjuk a path-ot VAGY Strapi canonicalURL-t adtak meg
+  // Canonical = the page's own real URL whenever the path is known. The hand-typed Strapi `canonicalURL` is only a
+  // fallback: typos there (www host, missing locale, old slug) pointed Google at redirecting / non-existent URLs.
   const canonicalFromSeo = absUrl(seo?.canonicalURL);
-  const canonical =
-    canonicalFromSeo ||
-    (opts?.pathname
-      ? `${SITE}${opts.pathname}`.replace(/\/+$/, '')
-      : undefined);
+  const canonical = opts?.pathname
+    ? `${SITE}${opts.pathname}`.replace(/\/+$/, '')
+    : canonicalFromSeo || undefined;
 
   // ✅ alternates csak akkor, ha van canonical + van értelmes lokalizált map
   let alternates: Metadata['alternates'] | undefined = undefined;
