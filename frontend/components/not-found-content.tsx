@@ -33,8 +33,9 @@ export async function NotFoundContent() {
     {
       id: 2,
       text: 'Vissza a főoldalra',
-      URL: `/${locale}`,
-      variant: 'outline',
+      // '' → the hero adds the locale itself (/hu); 'primary' = same look as the homepage's second button
+      URL: '',
+      variant: 'primary',
     },
   ];
 
