@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
 import ClientSlugHandler from '../ClientSlugHandler';
 import PageContent from '@/lib/shared/PageContent';
@@ -59,6 +60,9 @@ export default async function Page(props: {
   const [pageData] = await fetchCollectionType('pages', {
     filters: { slug: { $eq: params.slug }, locale: params.locale },
   });
+
+  // Unknown slug → real 404 (previously crashed → 500, so Google kept retrying old URLs)
+  if (!pageData) notFound();
 
   const localizedSlugs = pageData.localizations?.reduce(
     (acc: Record<string, string>, localization: any) => {

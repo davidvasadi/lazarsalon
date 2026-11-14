@@ -1,5 +1,6 @@
 import { IconShoppingCartUp } from '@tabler/icons-react';
 import { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 
 import ClientSlugHandler from '../ClientSlugHandler';
 import { Container } from '@/components/container';
@@ -9,6 +10,8 @@ import { Heading } from '@/components/elements/heading';
 import { Subheading } from '@/components/elements/subheading';
 import { Featured } from '@/components/products/featured';
 import { ProductItems } from '@/components/products/product-items';
+import { features } from '@/features.config';
+import { i18n } from '@/i18n.config';
 import { generateMetadataObject } from '@/lib/shared/metadata';
 import { fetchCollectionType, fetchSingleType } from '@/lib/strapi';
 import { Product } from '@/types/types';
@@ -16,6 +19,7 @@ import { Product } from '@/types/types';
 export async function generateMetadata(props: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
+  if (!features.products) redirect(`/${i18n.defaultLocale}`); // section not live yet → homepage (features.config.ts)
   const params = await props.params;
   const pageData = await fetchSingleType('product-page', {
     locale: params.locale,
@@ -29,6 +33,7 @@ export async function generateMetadata(props: {
 export default async function Products(props: {
   params: Promise<{ locale: string }>;
 }) {
+  if (!features.products) redirect(`/${i18n.defaultLocale}`); // section not live yet → homepage (features.config.ts)
   const params = await props.params;
 
   // Fetch the product-page and products data

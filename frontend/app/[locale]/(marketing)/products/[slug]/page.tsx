@@ -5,6 +5,8 @@ import { Container } from '@/components/container';
 import { AmbientColor } from '@/components/decorations/ambient-color';
 import DynamicZoneManager from '@/components/dynamic-zone/manager';
 import { SingleProduct } from '@/components/products/single-product';
+import { features } from '@/features.config';
+import { i18n } from '@/i18n.config';
 import { generateMetadataObject } from '@/lib/shared/metadata';
 import { fetchCollectionType } from '@/lib/strapi';
 import type { Product } from '@/types/types';
@@ -12,6 +14,7 @@ import type { Product } from '@/types/types';
 export async function generateMetadata(props: {
   params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
+  if (!features.products) redirect(`/${i18n.defaultLocale}`); // section not live yet → homepage (features.config.ts)
   const params = await props.params;
 
   const [pageData] = await fetchCollectionType<Product[]>('products', {
@@ -26,6 +29,7 @@ export async function generateMetadata(props: {
 export default async function SingleProductPage(props: {
   params: Promise<{ slug: string; locale: string }>;
 }) {
+  if (!features.products) redirect(`/${i18n.defaultLocale}`); // section not live yet → homepage (features.config.ts)
   const params = await props.params;
 
   const [pageData] = await fetchCollectionType<Product[]>('products', {

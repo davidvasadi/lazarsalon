@@ -60,7 +60,9 @@ export function middleware(request: NextRequest) {
       new URL(
         `/${locale}${pathname.startsWith('/') ? '' : '/'}${pathname}`,
         request.url
-      )
+      ),
+      // Permanent: only one active language, so this is the final address (Google replaces the old URL in its index)
+      308
     );
   }
 

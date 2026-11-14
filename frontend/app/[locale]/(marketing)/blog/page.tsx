@@ -1,5 +1,6 @@
 import { IconClipboardText } from '@tabler/icons-react';
 import { type Metadata } from 'next';
+import { redirect } from 'next/navigation';
 
 import ClientSlugHandler from '../ClientSlugHandler';
 import { BlogCard } from '@/components/blog-card';
@@ -9,6 +10,8 @@ import { AmbientColor } from '@/components/decorations/ambient-color';
 import { FeatureIconContainer } from '@/components/dynamic-zone/features/feature-icon-container';
 import { Heading } from '@/components/elements/heading';
 import { Subheading } from '@/components/elements/subheading';
+import { features } from '@/features.config';
+import { i18n } from '@/i18n.config';
 import { generateMetadataObject } from '@/lib/shared/metadata';
 import { fetchCollectionType, fetchSingleType } from '@/lib/strapi';
 import type { Article } from '@/types/types';
@@ -16,6 +19,7 @@ import type { Article } from '@/types/types';
 export async function generateMetadata(props: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
+  if (!features.blog) redirect(`/${i18n.defaultLocale}`); // section not live yet → homepage (features.config.ts)
   const params = await props.params;
   const pageData = await fetchSingleType('blog-page', {
     locale: params.locale,
@@ -29,6 +33,7 @@ export async function generateMetadata(props: {
 export default async function Blog(props: {
   params: Promise<{ locale: string; slug: string }>;
 }) {
+  if (!features.blog) redirect(`/${i18n.defaultLocale}`); // section not live yet → homepage (features.config.ts)
   const params = await props.params;
   const pageData = await fetchSingleType('blog-page', {
     locale: params.locale,
