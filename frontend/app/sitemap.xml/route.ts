@@ -43,7 +43,7 @@ const STRAPI_ORIGIN = (() => {
 const LOCALES =
   Array.isArray(i18n?.locales) && i18n.locales.length
     ? (i18n.locales as readonly string[]).map(String)
-    : ['hu', 'en'];
+    : ['hu'];
 
 const DEFAULT_LOCALE = String(i18n?.defaultLocale || LOCALES[0] || 'hu');
 
