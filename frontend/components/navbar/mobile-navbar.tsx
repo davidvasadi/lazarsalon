@@ -7,7 +7,13 @@ import {
   useMotionValueEvent,
   useScroll,
 } from 'framer-motion';
-import { CalendarIcon, ChevronDown } from 'lucide-react';
+import {
+  ArrowUpRight,
+  CalendarIcon,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { Link } from 'next-view-transitions';
 import { usePathname, useRouter } from 'next/navigation';
 import React, {
@@ -19,10 +25,14 @@ import React, {
 } from 'react';
 
 import { LocaleSwitcher } from '../locale-switcher';
+import { useNavReveal } from './nav-reveal';
 import { Container } from '@/components/container';
 import { Button } from '@/components/elements/button';
 import { Logo } from '@/components/logo';
+import { huf, pageOfPlan, parsePrice } from '@/lib/shared/plan-pages';
 import { cn } from '@/lib/utils';
+
+// mobile-navbar.tsx
 
 // mobile-navbar.tsx
 
@@ -111,6 +121,68 @@ function findHeroLikeComponent(p: { dynamic_zone?: any[] } | null | undefined) {
   return (hit as any) ?? null;
 }
 
+/** mobil almenü lapozója (a davelopment booking NavMegaMenu mintája): egy egész kártya + a következő széle, húzásra a
+ *  helyére pattan, a kártyák kitöltik a rendelkezésre álló magasságot; alatta pöttyök és a gombok */
+function ServiceCarousel({
+  items,
+  foot,
+}: {
+  items: React.ReactNode[];
+  foot: React.ReactNode;
+}) {
+  const ref = useRef<HTMLUListElement>(null);
+  const [idx, setIdx] = useState(0);
+  const onScroll = () => {
+    const el = ref.current;
+    const first = el?.children[0] as HTMLElement | undefined;
+    if (!el || !first) return;
+    const atEnd = el.scrollLeft >= el.scrollWidth - el.clientWidth - 2;
+    setIdx(
+      atEnd
+        ? items.length - 1
+        : Math.round(el.scrollLeft / (first.offsetWidth + 10))
+    ); // 10 = gap-2.5
+  };
+  return (
+    <>
+      <ul
+        ref={ref}
+        onScroll={onScroll}
+        className="flex min-h-0 flex-1 snap-x snap-mandatory scroll-px-5 gap-2.5 overflow-x-auto px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {items.map((it, i) => (
+          <motion.li
+            key={i}
+            initial={{ opacity: 0, x: 16 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{
+              type: 'spring',
+              stiffness: 500,
+              damping: 34,
+              delay: 0.1 + Math.min(i, 2) * 0.05,
+            }}
+            className="flex w-[82%] shrink-0 snap-start"
+          >
+            {it}
+          </motion.li>
+        ))}
+      </ul>
+      <div aria-hidden className="flex shrink-0 justify-center gap-1.5 pt-4">
+        {items.map((_, i) => (
+          <span
+            key={i}
+            className={cn(
+              'h-1.5 rounded-full transition-all duration-200',
+              i === idx ? 'w-5 bg-white' : 'w-1.5 bg-white/25'
+            )}
+          />
+        ))}
+      </div>
+      <div className="shrink-0 px-5 pt-4">{foot}</div>
+    </>
+  );
+}
+
 function heroForPage(p: PageLike) {
   const hero = findHeroLikeComponent(p) as {
     heading?: string | null;
@@ -119,7 +191,8 @@ function heroForPage(p: PageLike) {
   } | null;
 
   return {
-    heading: hero?.heading ?? p.slug,
+    // a menüben a hero címe, de a helyszín („Budapesten”) nélkül — az csak a Google-nek kell az oldalon
+    heading: (hero?.heading ?? p.slug).replace(/\s+Budapest(?:en)?\b/g, ''),
     sub: hero?.sub_heading ?? null,
     hero,
   };
@@ -402,6 +475,11 @@ export function UnifiedNavbar({
   const { scrollY } = useScroll();
 
   const [open, setOpen] = useState(false);
+  // a görgetéses megjelenés (index.tsx): üveges háttér csak lecsúszott állapotban; nyitva a menü nem tűnhet el
+  const navReveal = useNavReveal();
+  useEffect(() => {
+    navReveal.setMenuOpen(open);
+  }, [open, navReveal]);
   const [openId, setOpenId] = useState<number | null>(null);
 
   const openRef = useRef(open);
@@ -496,7 +574,13 @@ export function UnifiedNavbar({
       const x = r.left + r.width / 2;
       const y = r.top + r.height / 2;
 
-      const inferred = inferToneFromPoint(x, y, btn);
+      // a sáv SAJÁT (üveges) hátterét ne vegye figyelembe, csak ami alatta van — különben a hero tetejére visszagörgetve
+      // a lecsúszott sáv üvegét „világos háttérnek” látja, és sötét marad a szöveg
+      const inferred = inferToneFromPoint(
+        x,
+        y,
+        (btn.closest('nav') as HTMLElement | null) ?? btn
+      );
       if (inferred) {
         setTone(inferred);
         return;
@@ -506,15 +590,22 @@ export function UnifiedNavbar({
     });
   }, []);
 
+  // a menü színe (mi van a gomb alatt) — görgetés közben legfeljebb 150 ms-onként, a lap tetején azonnal (telefonon a
+  // képkockánkénti elementsFromPoint + getComputedStyle szaggatást okozott)
+  const toneAt = useRef(0);
   useMotionValueEvent(scrollY, 'change', (v) => {
     scrollRef.current = v;
     setScrolled(v > 14);
-    scheduleToneUpdate();
+    const now = performance.now();
+    if (v <= 2 || now - toneAt.current > 150) {
+      toneAt.current = now;
+      scheduleToneUpdate();
+    }
   });
 
   useEffect(() => {
     scheduleToneUpdate();
-  }, [scheduleToneUpdate, open]);
+  }, [scheduleToneUpdate, open, navReveal.revealed]);
 
   useEffect(() => {
     if (openRef.current) closeMenu();
@@ -573,18 +664,24 @@ export function UnifiedNavbar({
     return leftItems.find((x) => x.id === openId) ?? null;
   }, [openId, leftItems]);
 
+  // gépen a „Kiemelt” kártyák akkor is látszanak, ha a Szolgáltatások nincs lenyitva (az első aloldalas menüpontból)
+  const featuredItem = useMemo(
+    () =>
+      activeItem ?? leftItems.find((x) => (x.pages?.length ?? 0) > 0) ?? null,
+    [activeItem, leftItems]
+  );
+
   const featuredPages = useMemo(() => {
-    const pages = activeItem?.pages ?? [];
+    const pages = featuredItem?.pages ?? [];
     return pages.slice(0, 3);
-  }, [activeItem]);
+  }, [featuredItem]);
 
   useEffect(() => {
     if (!open) return;
-    if (!enableFeatured) return;
-    if (!openId) return;
     if (!STRAPI_BASE) return;
 
-    const pages = featuredPages ?? [];
+    // telefonon a lenyíló listában minden szolgáltatásnak kell kép (gépen a kiemelt 3 kártya is ebből él)
+    const pages = featuredItem?.pages ?? [];
     if (!pages.length) return;
 
     const missing = pages.filter((p) => {
@@ -662,7 +759,38 @@ export function UnifiedNavbar({
 
     return () => ac.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, openId, enableFeatured, locale, featuredPages]);
+  }, [open, locale, featuredItem]);
+
+  // kezdő ár szolgáltatásoldalanként (élőben a Strapi árlistájából) — a mobil lenyíló képes listájához
+  const [fromPrice, setFromPrice] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (!open || !STRAPI_BASE || Object.keys(fromPrice).length) return;
+    const ac = new AbortController();
+    const q = new URLSearchParams({
+      locale,
+      'fields[0]': 'name',
+      'fields[1]': 'price',
+      'pagination[pageSize]': '100',
+    });
+    fetch(`${STRAPI_BASE}/api/plans?${q}`, { signal: ac.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        const min: Record<string, number> = {};
+        for (const pl of j?.data ?? []) {
+          if (!pl?.name) continue;
+          const slug = pageOfPlan(pl.name);
+          const v = parsePrice(pl.price).min;
+          if (v && (!min[slug] || v < min[slug])) min[slug] = v;
+        }
+        setFromPrice(
+          Object.fromEntries(
+            Object.entries(min).map(([k, v]) => [k, `${huf(v)}-tól`])
+          )
+        );
+      })
+      .catch(() => {});
+    return () => ac.abort();
+  }, [open, locale, fromPrice]);
 
   const topItemTextClass = useMemo(
     () =>
@@ -725,7 +853,8 @@ export function UnifiedNavbar({
                   <div
                     className={cn(
                       'w-full',
-                      enableFeatured && 'lg:grid lg:grid-cols-12 lg:gap-12'
+                      enableFeatured &&
+                        'lg:grid lg:grid-cols-12 lg:items-center lg:gap-12'
                     )}
                   >
                     <div
@@ -779,12 +908,16 @@ export function UnifiedNavbar({
                                 {item.text}
                               </span>
 
+                              <ChevronRight
+                                aria-hidden
+                                className="h-6 w-6 text-primary lg:hidden"
+                              />
                               <motion.span
                                 aria-hidden
                                 initial={false}
                                 animate={isOpen ? 'open' : 'closed'}
+                                className="hidden lg:inline-flex"
                                 style={{
-                                  display: 'inline-flex',
                                   width: 24,
                                   height: 24,
                                   flex: '0 0 24px',
@@ -810,86 +943,111 @@ export function UnifiedNavbar({
                               </motion.span>
                             </button>
 
-                            <AnimatePresence initial={false}>
-                              {isOpen && (
-                                <motion.div
-                                  key="drop"
-                                  initial={{
-                                    opacity: 0,
-                                    y: 6,
-                                    maxHeight: 0,
-                                    marginTop: 0,
-                                  }}
-                                  animate={{
-                                    opacity: 1,
-                                    y: 0,
-                                    maxHeight: 520,
-                                    marginTop: 14,
-                                  }}
-                                  exit={{
-                                    opacity: 0,
-                                    y: 6,
-                                    maxHeight: 0,
-                                    marginTop: 0,
-                                  }}
-                                  transition={{ duration: 0.28, ease: EASE }}
-                                  style={{
-                                    overflow: 'hidden',
-                                    willChange:
-                                      'max-height, opacity, transform',
-                                  }}
-                                  className="ml-3"
-                                >
-                                  <div className="flex flex-col gap-3 border-l border-white/15 pl-4">
-                                    <Link
-                                      href={topHref}
-                                      target={item.target ?? undefined}
-                                      className="text-[18px] text-white/80"
-                                      onClick={makeNavClick(
-                                        topHref,
-                                        item.target
-                                      )}
-                                    >
-                                      Összes
-                                    </Link>
+                            {/* gépen lenyíló lista; telefonon helyette oldalra csúszó, képes almenü (lent) */}
+                            <div className="hidden lg:block">
+                              <AnimatePresence initial={false}>
+                                {isOpen && (
+                                  <motion.div
+                                    key="drop"
+                                    initial={{
+                                      opacity: 0,
+                                      y: 6,
+                                      maxHeight: 0,
+                                      marginTop: 0,
+                                    }}
+                                    animate={{
+                                      opacity: 1,
+                                      y: 0,
+                                      maxHeight: 900,
+                                      marginTop: 14,
+                                    }}
+                                    exit={{
+                                      opacity: 0,
+                                      y: 6,
+                                      maxHeight: 0,
+                                      marginTop: 0,
+                                    }}
+                                    transition={{ duration: 0.28, ease: EASE }}
+                                    style={{
+                                      overflow: 'hidden',
+                                      willChange:
+                                        'max-height, opacity, transform',
+                                    }}
+                                    className="ml-3"
+                                  >
+                                    <div className="flex flex-col gap-3 border-l border-white/15 pl-4">
+                                      <Link
+                                        href={topHref}
+                                        target={item.target ?? undefined}
+                                        className="text-[18px] text-white/80"
+                                        onClick={makeNavClick(
+                                          topHref,
+                                          item.target
+                                        )}
+                                      >
+                                        Összes
+                                      </Link>
 
-                                    {pages.map((p) => {
-                                      const hero = heroForPage(p);
-                                      const href = pageHref(locale, p);
+                                      {pages.map((p) => {
+                                        const hero = heroForPage(p);
+                                        const href = pageHref(locale, p);
+                                        const cover =
+                                          coverUrlForPage(p) ??
+                                          coverCache[p.slug] ??
+                                          null;
+                                        const price = fromPrice[p.slug];
 
-                                      return (
-                                        <Link
-                                          key={p.id}
-                                          href={href}
-                                          className="block rounded-lg px-3 py-2 transition hover:bg-white/5"
-                                          onClick={makeNavClick(href, null)}
-                                        >
-                                          <div className="text-sm text-white">
-                                            {hero.heading}
-                                          </div>
-                                          {hero.sub && (
-                                            <div className="mt-0.5 line-clamp-2 text-xs text-white/60">
-                                              {hero.sub}
+                                        return (
+                                          <Link
+                                            key={p.id}
+                                            href={href}
+                                            className="flex items-center gap-3 rounded-xl py-1.5 pr-2 transition active:bg-white/5 [@media(hover:hover)]:hover:bg-white/5"
+                                            onClick={makeNavClick(href, null)}
+                                          >
+                                            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-white/10">
+                                              {cover ? (
+                                                <div
+                                                  className="absolute inset-0 bg-cover"
+                                                  style={{
+                                                    backgroundImage: `url(${cover})`,
+                                                    backgroundPosition:
+                                                      'center 25%',
+                                                  }}
+                                                />
+                                              ) : null}
                                             </div>
-                                          )}
-                                        </Link>
-                                      );
-                                    })}
-                                  </div>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
+                                            <div className="min-w-0">
+                                              <div className="text-[15px] leading-snug text-white">
+                                                {hero.heading}
+                                              </div>
+                                              {price ? (
+                                                <div className="mt-0.5 text-xs text-muted">
+                                                  {price}
+                                                </div>
+                                              ) : hero.sub ? (
+                                                <div className="mt-0.5 line-clamp-1 text-xs text-white/60">
+                                                  {hero.sub}
+                                                </div>
+                                              ) : null}
+                                            </div>
+                                          </Link>
+                                        );
+                                      })}
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
                           </div>
                         );
                       })}
                     </div>
 
                     {enableFeatured &&
-                      openId &&
-                      (activeItem?.pages?.length ?? 0) > 0 && (
+                      (featuredItem?.pages?.length ?? 0) > 0 && (
                         <div className="hidden lg:col-span-5 lg:block">
                           <motion.div
-                            key={activeItem?.id ?? 'featured'}
+                            key={featuredItem?.id ?? 'featured'}
                             initial={{ opacity: 0, y: 10, scale: 0.99 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 8, scale: 0.99 }}
@@ -905,7 +1063,7 @@ export function UnifiedNavbar({
                                 Kiemelt
                               </div>
                               <div className="text-xs text-white/45">
-                                {activeItem?.text ?? ''}
+                                {featuredItem?.text ?? ''}
                               </div>
                             </div>
 
@@ -1008,6 +1166,122 @@ export function UnifiedNavbar({
                 </div>
               </Container>
             </div>
+
+            {/* TELEFON: a Szolgáltatások almenüje — oldalra csúszik be; a davelopment booking „Kinek” almenüjének mintája:
+                lapozható, a képernyőt kitöltő képes kártyák (cím + kezdő ár a képen), pöttyök, alul a gombok */}
+            <AnimatePresence>
+              {activeItem && (activeItem.pages?.length ?? 0) > 0 && (
+                <motion.div
+                  key="sub"
+                  initial={{ x: '100%' }}
+                  animate={{ x: 0 }}
+                  exit={{ x: '100%' }}
+                  transition={{ duration: 0.32, ease: EASE }}
+                  className="fixed inset-0 z-50 flex h-[100svh] flex-col bg-[#141414] pb-[max(1.25rem,env(safe-area-inset-bottom))] lg:hidden"
+                >
+                  <div className="shrink-0 px-5 pt-[calc(env(safe-area-inset-top)+4.5rem)]">
+                    <button
+                      type="button"
+                      onClick={() => setOpenId(null)}
+                      className="-ml-1 inline-flex items-center gap-1 py-2 text-[15px] text-white/70"
+                      style={{ WebkitTapHighlightColor: 'transparent' }}
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                      Vissza
+                    </button>
+                    <span
+                      className={cn(
+                        'mt-1 block pb-5 text-primary',
+                        topItemTextClass
+                      )}
+                    >
+                      {activeItem.text}
+                    </span>
+                  </div>
+
+                  <ServiceCarousel
+                    items={(activeItem.pages ?? []).map((p) => {
+                      const hero = heroForPage(p);
+                      const href = pageHref(locale, p);
+                      const cover =
+                        coverUrlForPage(p) ?? coverCache[p.slug] ?? null;
+                      const price = fromPrice[p.slug];
+                      return (
+                        <Link
+                          key={p.id}
+                          href={href}
+                          onClick={makeNavClick(href, null)}
+                          className="relative block min-h-[200px] w-full flex-1 overflow-hidden rounded-3xl bg-white/10 active:opacity-90"
+                        >
+                          {cover ? (
+                            <div
+                              className="absolute inset-0 bg-cover"
+                              style={{
+                                backgroundImage: `url(${cover})`,
+                                backgroundPosition: 'center 25%',
+                              }}
+                            />
+                          ) : null}
+                          <span
+                            aria-hidden
+                            className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"
+                          />
+                          <span className="absolute inset-x-4 bottom-4 flex items-end justify-between gap-3">
+                            <span className="min-w-0">
+                              <span className="block text-[22px] font-light leading-tight text-white">
+                                {hero.heading.split(/\s+[–—-]\s+/)[0]}
+                              </span>
+                              {price ? (
+                                <span className="mt-1 block text-sm text-muted">
+                                  {price}
+                                </span>
+                              ) : null}
+                            </span>
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-lightblack">
+                              <ArrowUpRight
+                                className="h-4 w-4"
+                                strokeWidth={2}
+                              />
+                            </span>
+                          </span>
+                        </Link>
+                      );
+                    })}
+                    foot={(() => {
+                      const allHref = navHref(locale, activeItem.URL);
+                      const b = rightItems.find((x) => isBookingText(x.text));
+                      const bHref = b ? navHref(locale, b.URL) : null;
+                      return (
+                        <div className="flex flex-col gap-2.5">
+                          {b && bHref ? (
+                            <Button
+                              variant="primary"
+                              as={Link}
+                              href={bHref}
+                              target={b.target ?? undefined}
+                              onClick={makeNavClick(bHref, b.target)}
+                              className="w-full py-4"
+                            >
+                              <span className="inline-flex items-center justify-center gap-2">
+                                <CalendarIcon className="h-4 w-4" />
+                                <span>{b.text}</span>
+                              </span>
+                            </Button>
+                          ) : null}
+                          <Link
+                            href={allHref}
+                            onClick={makeNavClick(allHref, activeItem.target)}
+                            className="py-2 text-center text-[15px] text-white/75"
+                          >
+                            Összes szolgáltatás és ár →
+                          </Link>
+                        </div>
+                      );
+                    })()}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1015,7 +1289,7 @@ export function UnifiedNavbar({
       <div
         className={cn(
           'relative z-[70] w-full transition-colors duration-200',
-          !open && scrolled
+          !open && (navReveal.revealed ?? scrolled)
             ? cn(
                 'bg-white/70 supports-[backdrop-filter]:bg-white/12',
                 'supports-[backdrop-filter]:backdrop-blur-2xl supports-[backdrop-filter]:backdrop-saturate-150',
