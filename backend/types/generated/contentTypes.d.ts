@@ -646,6 +646,11 @@ export interface ApiContactContact extends Struct.CollectionTypeSchema {
         'N\u0151i Hajv\u00E1g\u00E1s',
         'F\u00E9rfi Hajv\u00E1g\u00E1s',
         'Hajsz\u00E1r\u00EDt\u00E1s & Styling',
+        'Gyermek Hajv\u00E1g\u00E1s',
+        'Sz\u0151k\u00EDt\u00E9s',
+        'G\u00F6nd\u00F6r Haj (Curly)',
+        'M\u0171k\u00F6r\u00F6m & Manik\u0171r',
+        'Egy\u00E9b / m\u00E9g nem tudom',
       ]
     >;
     submission_status: Schema.Attribute.Enumeration<

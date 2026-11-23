@@ -16,12 +16,16 @@ import {
   IconMapPin,
   IconPhone,
 } from '@tabler/icons-react';
+import { Check } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import React, { useMemo, useState } from 'react';
 
 import { Button } from '../elements/button';
 import { Container } from '@/components/container';
+import { SECTION_TITLE } from '@/lib/shared/typography';
+
+// components/dynamic-zone/form-next-to-section.tsx (vagy ahol ez a komponensed van)
 
 // components/dynamic-zone/form-next-to-section.tsx (vagy ahol ez a komponensed van)
 
@@ -245,6 +249,12 @@ export function FormNextToSection({
       { label: 'Női Hajvágás', value: 'Női Hajvágás' },
       { label: 'Férfi Hajvágás', value: 'Férfi Hajvágás' },
       { label: 'Hajszárítás & Styling', value: 'Hajszárítás & Styling' },
+      // 2026-11-23: a Strapi contact.service enum is bővült ezekkel
+      { label: 'Gyermek Hajvágás', value: 'Gyermek Hajvágás' },
+      { label: 'Szőkítés', value: 'Szőkítés' },
+      { label: 'Göndör Haj (Curly)', value: 'Göndör Haj (Curly)' },
+      { label: 'Műköröm & Manikűr', value: 'Műköröm & Manikűr' },
+      { label: 'Egyéb / még nem tudom', value: 'Egyéb / még nem tudom' },
     ];
 
     const serviceOptions = selectOptionsFromStrapi.length
@@ -364,6 +374,7 @@ export function FormNextToSection({
 
   const [submitting, setSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [sentName, setSentName] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
@@ -425,6 +436,7 @@ export function FormNextToSection({
         return;
       }
 
+      setSentName(norm(fullName).split(/\s+/).slice(-1)[0] || '');
       setSuccessMsg('Köszönjük! Hamarosan válaszolunk.');
       setFieldErrors({});
       setFullName('');
@@ -459,7 +471,7 @@ export function FormNextToSection({
         <div>
           <div className="text-left">
             <h1
-              className="text-left text-4xl md:text-6xl lg:text-7xl font-light text-secondary leading-tight max-w-xl"
+              className={`text-left ${SECTION_TITLE} text-secondary`}
               style={{ color: COLORS.lightblack }}
             >
               {topHeading}
@@ -829,33 +841,204 @@ export function FormNextToSection({
                 </p>
               ) : null}
 
-              <form className="mt-7 space-y-5" onSubmit={onSubmit}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {successMsg ? (
+                // beküldés után: visszaigazoló kártya az űrlap helyén
+                <div
+                  className="mt-7 rounded-2xl border border-black/10 bg-white p-6 sm:p-8"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <div
+                    className="flex h-11 w-11 items-center justify-center rounded-full"
+                    style={{ background: '#e8f5ec', color: '#16803c' }}
+                  >
+                    <Check className="h-5 w-5" />
+                  </div>
+                  <p
+                    className="mt-4 text-xl font-light"
+                    style={{ color: COLORS.lightblack }}
+                  >
+                    Köszönjük{sentName ? `, ${sentName}` : ''}! Megkaptuk az
+                    üzeneted.
+                  </p>
+                  <p
+                    className="mt-2 text-[15px] leading-relaxed"
+                    style={{ color: COLORS.secondary }}
+                  >
+                    24 órán belül jelentkezünk a megadott telefonszámon vagy
+                    e-mail-címen. Ha sietős, foglalj most online, vagy hívj
+                    minket.
+                  </p>
+                  <div className="mt-6 flex flex-wrap items-center gap-3">
+                    <a
+                      href="https://n474969.alteg.io"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-full px-5 py-3 text-[15px] text-white"
+                      style={{ background: COLORS.lightblack }}
+                    >
+                      Időpontfoglalás
+                    </a>
+                    <a
+                      href="tel:+36203488481"
+                      className="inline-flex items-center gap-2 rounded-full border border-black/15 px-5 py-3 text-[15px]"
+                      style={{ color: COLORS.lightblack }}
+                    >
+                      +36 20 348 8481
+                    </a>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSuccessMsg(null)}
+                    className="mt-6 text-sm font-medium hover:underline underline-offset-4"
+                    style={{ color: COLORS.muted }}
+                  >
+                    Új üzenet küldése
+                  </button>
+                </div>
+              ) : (
+                <form className="mt-7 space-y-5" onSubmit={onSubmit}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label
+                        className={labelClass}
+                        htmlFor="fullName"
+                        style={{ color: COLORS.secondary }}
+                      >
+                        {fields.name.label}
+                      </label>
+                      <div className="mt-2">
+                        <input
+                          id="fullName"
+                          type="text"
+                          autoComplete="name"
+                          placeholder={fields.name.placeholder}
+                          className={inputBase}
+                          style={{
+                            background: COLORS.charcoal,
+                            color: COLORS.lightblack,
+                          }}
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          aria-invalid={!!fieldErrors.fullName}
+                        />
+                        {fieldErrors.fullName ? (
+                          <p className={errorTextClass}>
+                            {fieldErrors.fullName}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label
+                        className={labelClass}
+                        htmlFor="phone"
+                        style={{ color: COLORS.secondary }}
+                      >
+                        {fields.phone.label}
+                      </label>
+                      <div className="mt-2">
+                        <input
+                          id="phone"
+                          type="tel"
+                          inputMode="tel"
+                          autoComplete="tel"
+                          placeholder={fields.phone.placeholder}
+                          className={inputBase}
+                          style={{
+                            background: COLORS.charcoal,
+                            color: COLORS.lightblack,
+                          }}
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   <div>
                     <label
                       className={labelClass}
-                      htmlFor="fullName"
+                      htmlFor="service"
                       style={{ color: COLORS.secondary }}
                     >
-                      {fields.name.label}
+                      {fields.service.label}
+                    </label>
+                    <div className="mt-2 relative">
+                      <select
+                        id="service"
+                        value={service}
+                        onChange={(e) => setService(e.target.value)}
+                        className={`${inputBase} appearance-none pr-10`}
+                        style={{
+                          background: COLORS.charcoal,
+                          color: COLORS.lightblack,
+                        }}
+                        aria-invalid={!!fieldErrors.service}
+                      >
+                        <option value="" disabled>
+                          {fields.service.placeholder}
+                        </option>
+
+                        {Array.isArray(fields.service.options) &&
+                          fields.service.options.map(
+                            (opt: any, idx: number) => {
+                              const label =
+                                typeof opt === 'string' ? opt : opt?.label;
+                              const value =
+                                typeof opt === 'string'
+                                  ? opt
+                                  : opt?.value || opt?.label;
+                              if (!label || !value) return null;
+                              return (
+                                <option
+                                  key={`opt-${idx}`}
+                                  value={String(value)}
+                                >
+                                  {String(label)}
+                                </option>
+                              );
+                            }
+                          )}
+                      </select>
+
+                      <IconChevronDown
+                        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4"
+                        style={{ color: `${COLORS.secondary}b3` }}
+                        stroke={2}
+                      />
+                    </div>
+                    {fieldErrors.service ? (
+                      <p className={errorTextClass}>{fieldErrors.service}</p>
+                    ) : null}
+                  </div>
+
+                  <div>
+                    <label
+                      className={labelClass}
+                      htmlFor="email"
+                      style={{ color: COLORS.secondary }}
+                    >
+                      {fields.email.label}
                     </label>
                     <div className="mt-2">
                       <input
-                        id="fullName"
-                        type="text"
-                        autoComplete="name"
-                        placeholder={fields.name.placeholder}
+                        id="email"
+                        type="email"
+                        autoComplete="email"
+                        placeholder={fields.email.placeholder}
                         className={inputBase}
                         style={{
                           background: COLORS.charcoal,
                           color: COLORS.lightblack,
                         }}
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        aria-invalid={!!fieldErrors.fullName}
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        aria-invalid={!!fieldErrors.email}
                       />
-                      {fieldErrors.fullName ? (
-                        <p className={errorTextClass}>{fieldErrors.fullName}</p>
+                      {fieldErrors.email ? (
+                        <p className={errorTextClass}>{fieldErrors.email}</p>
                       ) : null}
                     </div>
                   </div>
@@ -863,216 +1046,102 @@ export function FormNextToSection({
                   <div>
                     <label
                       className={labelClass}
-                      htmlFor="phone"
+                      htmlFor="message"
                       style={{ color: COLORS.secondary }}
                     >
-                      {fields.phone.label}
+                      {fields.message.label}
                     </label>
                     <div className="mt-2">
-                      <input
-                        id="phone"
-                        type="tel"
-                        inputMode="tel"
-                        autoComplete="tel"
-                        placeholder={fields.phone.placeholder}
-                        className={inputBase}
+                      <textarea
+                        id="message"
+                        rows={6}
+                        placeholder={fields.message.placeholder}
+                        className={`${inputBase} resize-none`}
                         style={{
                           background: COLORS.charcoal,
                           color: COLORS.lightblack,
                         }}
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        aria-invalid={!!fieldErrors.message}
                       />
+                      {fieldErrors.message ? (
+                        <p className={errorTextClass}>{fieldErrors.message}</p>
+                      ) : null}
                     </div>
                   </div>
-                </div>
 
-                <div>
-                  <label
-                    className={labelClass}
-                    htmlFor="service"
-                    style={{ color: COLORS.secondary }}
-                  >
-                    {fields.service.label}
-                  </label>
-                  <div className="mt-2 relative">
-                    <select
-                      id="service"
-                      value={service}
-                      onChange={(e) => setService(e.target.value)}
-                      className={`${inputBase} appearance-none pr-10`}
-                      style={{
-                        background: COLORS.charcoal,
-                        color: COLORS.lightblack,
-                      }}
-                      aria-invalid={!!fieldErrors.service}
+                  {privacyUrl ? (
+                    <p
+                      className="text-[11px] sm:text-xs"
+                      style={{ color: `${COLORS.secondary}bf` }}
                     >
-                      <option value="" disabled>
-                        {fields.service.placeholder}
-                      </option>
-
-                      {Array.isArray(fields.service.options) &&
-                        fields.service.options.map((opt: any, idx: number) => {
-                          const label =
-                            typeof opt === 'string' ? opt : opt?.label;
-                          const value =
-                            typeof opt === 'string'
-                              ? opt
-                              : opt?.value || opt?.label;
-                          if (!label || !value) return null;
-                          return (
-                            <option key={`opt-${idx}`} value={String(value)}>
-                              {String(label)}
-                            </option>
-                          );
-                        })}
-                    </select>
-
-                    <IconChevronDown
-                      className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4"
-                      style={{ color: `${COLORS.secondary}b3` }}
-                      stroke={2}
-                    />
-                  </div>
-                  {fieldErrors.service ? (
-                    <p className={errorTextClass}>{fieldErrors.service}</p>
+                      Az űrlap elküldésével hozzájárulsz adataid kezeléséhez az{' '}
+                      <Link
+                        href={privacyUrl}
+                        className="hover:underline font-medium"
+                        style={{ color: COLORS.muted }}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Adatvédelmi irányelveink
+                      </Link>{' '}
+                      szerint.
+                    </p>
                   ) : null}
-                </div>
 
-                <div>
-                  <label
-                    className={labelClass}
-                    htmlFor="email"
-                    style={{ color: COLORS.secondary }}
+                  {/* ✅ CTA-stílusú submit gomb */}
+                  <Button
+                    className={`w-full h-11 rounded-md flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed ${primaryBtnClass}`}
+                    style={primaryBtnStyle}
+                    type="submit"
+                    disabled={submitting}
                   >
-                    {fields.email.label}
-                  </label>
-                  <div className="mt-2">
-                    <input
-                      id="email"
-                      type="email"
-                      autoComplete="email"
-                      placeholder={fields.email.placeholder}
-                      className={inputBase}
-                      style={{
-                        background: COLORS.charcoal,
-                        color: COLORS.lightblack,
-                      }}
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      aria-invalid={!!fieldErrors.email}
-                    />
-                    {fieldErrors.email ? (
-                      <p className={errorTextClass}>{fieldErrors.email}</p>
-                    ) : null}
-                  </div>
-                </div>
+                    <span className="relative z-10 inline-flex items-center gap-2 font-semibold">
+                      {submitting ? 'Küldés…' : fields.submit.label}
+                      <IconArrowRight
+                        className="h-4 w-4"
+                        stroke={2.2}
+                        style={{ color: COLORS.muted }}
+                      />
+                    </span>
+                    <span className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-white/0 via-white/25 to-white/0" />
+                  </Button>
 
-                <div>
-                  <label
-                    className={labelClass}
-                    htmlFor="message"
-                    style={{ color: COLORS.secondary }}
-                  >
-                    {fields.message.label}
-                  </label>
-                  <div className="mt-2">
-                    <textarea
-                      id="message"
-                      rows={6}
-                      placeholder={fields.message.placeholder}
-                      className={`${inputBase} resize-none`}
-                      style={{
-                        background: COLORS.charcoal,
-                        color: COLORS.lightblack,
-                      }}
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      aria-invalid={!!fieldErrors.message}
-                    />
-                    {fieldErrors.message ? (
-                      <p className={errorTextClass}>{fieldErrors.message}</p>
-                    ) : null}
-                  </div>
-                </div>
+                  {errorMsg ? (
+                    <p className="text-xs sm:text-sm font-medium text-red-600">
+                      {errorMsg}
+                    </p>
+                  ) : null}
 
-                {privacyUrl ? (
-                  <p
-                    className="text-[11px] sm:text-xs"
-                    style={{ color: `${COLORS.secondary}bf` }}
-                  >
-                    Az űrlap elküldésével hozzájárulsz adataid kezeléséhez az{' '}
-                    <Link
-                      href={privacyUrl}
-                      className="hover:underline font-medium"
-                      style={{ color: COLORS.muted }}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Adatvédelmi irányelveink
-                    </Link>{' '}
-                    szerint.
-                  </p>
-                ) : null}
-
-                {/* ✅ CTA-stílusú submit gomb */}
-                <Button
-                  className={`w-full h-11 rounded-md flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed ${primaryBtnClass}`}
-                  style={primaryBtnStyle}
-                  type="submit"
-                  disabled={submitting}
-                >
-                  <span className="relative z-10 inline-flex items-center gap-2 font-semibold">
-                    {submitting ? 'Küldés…' : fields.submit.label}
-                    <IconArrowRight
-                      className="h-4 w-4"
-                      stroke={2.2}
-                      style={{ color: COLORS.muted }}
-                    />
-                  </span>
-                  <span className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-white/0 via-white/25 to-white/0" />
-                </Button>
-
-                {successMsg ? (
-                  <p
-                    className="text-xs sm:text-sm font-medium"
-                    style={{ color: '#16803c' }}
-                  >
-                    {successMsg}
-                  </p>
-                ) : null}
-
-                {errorMsg ? (
-                  <p className="text-xs sm:text-sm font-medium text-red-600">
-                    {errorMsg}
-                  </p>
-                ) : null}
-
-                {socialLinks.length ? (
-                  <div className="pt-4 flex flex-wrap items-center gap-2">
-                    {socialLinks.map((s, idx) => {
-                      const Icon = pickIconByLabel(s.text);
-                      return (
-                        <Link
-                          key={`${s.url}-${idx}`}
-                          href={s.url}
-                          target={s.target || '_self'}
-                          className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold border border-black/10 bg-white hover:border-black/20"
-                          style={{ color: COLORS.lightblack }}
-                          rel={s.target === '_blank' ? 'noreferrer' : undefined}
-                        >
-                          <Icon
-                            className="h-4 w-4"
-                            style={{ color: COLORS.muted }}
-                            stroke={2}
-                          />
-                          <span>{s.text}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                ) : null}
-              </form>
+                  {socialLinks.length ? (
+                    <div className="pt-4 flex flex-wrap items-center gap-2">
+                      {socialLinks.map((s, idx) => {
+                        const Icon = pickIconByLabel(s.text);
+                        return (
+                          <Link
+                            key={`${s.url}-${idx}`}
+                            href={s.url}
+                            target={s.target || '_self'}
+                            className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold border border-black/10 bg-white hover:border-black/20"
+                            style={{ color: COLORS.lightblack }}
+                            rel={
+                              s.target === '_blank' ? 'noreferrer' : undefined
+                            }
+                          >
+                            <Icon
+                              className="h-4 w-4"
+                              style={{ color: COLORS.muted }}
+                              stroke={2}
+                            />
+                            <span>{s.text}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </form>
+              )}
             </div>
           </div>
         </div>
