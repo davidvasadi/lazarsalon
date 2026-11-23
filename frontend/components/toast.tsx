@@ -8,6 +8,10 @@ import { XIcon } from '@/components/icons/x';
 
 const CONSENT_KEY = 'consent.choice.v1';
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
+// Google Ads saját konverziómérése (Analytics nélkül): a foglalás gomb (Altegio) kattintása = foglalás-konverzió
+const AW_ID = 'AW-17951872435';
+const AW_BOOKING = 'AW-17951872435/Z5irCLnj_r0dELOrj_BC';
+const BOOKING_LINK = 'a[href*="alteg.io"]';
 
 let __gaLoaded = false;
 
@@ -46,6 +50,7 @@ function loadGAOnce() {
       (window as any).gtag?.('config', GA_ID, {
         anonymize_ip: true,
       });
+      (window as any).gtag?.('config', AW_ID);
     } catch {}
   };
 
@@ -75,6 +80,29 @@ function updateGtagConsent(granted: boolean) {
 
 export const AIToast = () => {
   const [isOpen, setIsOpen] = useState(false);
+
+  // foglalás gomb → Google Ads konverzió (csak ha elfogadta a sütiket; beacon: az Altegióra ugrás előtt is elmegy)
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      const a = (e.target as Element | null)?.closest?.(BOOKING_LINK);
+      if (!a) return;
+      try {
+        if (localStorage.getItem(CONSENT_KEY) !== 'granted') return;
+      } catch {
+        return;
+      }
+      (window as any).gtag?.('event', 'conversion', {
+        send_to: AW_BOOKING,
+        transport_type: 'beacon',
+      });
+      (window as any).gtag?.('event', 'booking_click', {
+        link_url: (a as HTMLAnchorElement).href,
+        transport_type: 'beacon',
+      });
+    };
+    document.addEventListener('click', onClick, true);
+    return () => document.removeEventListener('click', onClick, true);
+  }, []);
 
   useEffect(() => {
     try {
