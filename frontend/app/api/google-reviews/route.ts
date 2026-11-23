@@ -1,36 +1,22 @@
-// app/api/google-reviews/route.ts
+// app/api/google-reviews/route.ts — a kliens-komponensek (vélemények, hero, foglalás-kártya) innen kapják a Google-adatot.
+// A Google-t a lib/shared/google-reviews.ts kérdezi, HETENTE egyszer; ez a válasz is egy napig gyorsítótárazott.
 import { NextResponse } from 'next/server';
 
-export const revalidate = 43200; // 12 óra cache (Next/Vercel)
+import { getGooglePlace, showcaseReviews } from '@/lib/shared/google-reviews';
+
+export const revalidate = 86400;
 
 export async function GET() {
-  const apiKey =
-    process.env.GOOGLE_PLACES_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_API_KEY; // fallback, de a secret jobb
-  const placeId =
-    process.env.GOOGLE_PLACE_ID || process.env.NEXT_PUBLIC_GOOGLE_PLACE_ID;
-
-  if (!apiKey || !placeId) {
-    return NextResponse.json({ configured: false }, { status: 200 });
-  }
-
-  const url = `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`;
-
-  const res = await fetch(url, {
-    headers: {
-      'X-Goog-Api-Key': apiKey,
-      'X-Goog-FieldMask': 'rating,userRatingCount,reviews',
-      Accept: 'application/json',
+  const place = await getGooglePlace();
+  if (!place) return NextResponse.json({ configured: false }, { status: 200 });
+  return NextResponse.json(
+    {
+      configured: true,
+      rating: place.rating,
+      count: place.count,
+      mapsUrl: place.mapsUrl,
+      reviews: showcaseReviews(place),
     },
-    next: { revalidate },
-  });
-
-  if (!res.ok) {
-    return NextResponse.json(
-      { configured: true, error: `Google Places error: ${res.status}` },
-      { status: 200 }
-    );
-  }
-
-  const data = await res.json();
-  return NextResponse.json({ configured: true, ...data }, { status: 200 });
+    { status: 200 }
+  );
 }

@@ -10,6 +10,10 @@ import { Container } from '../../container';
 import { Heading } from '../../elements/heading';
 import { Subheading } from '../../elements/subheading';
 import { TestimonialsSlider } from './slider';
+import { RatingStars } from '@/components/elements/rating-stars';
+import { SECTION_TITLE } from '@/lib/shared/typography';
+
+// components/dynamic-zone/testimonials/index.tsx
 
 // components/dynamic-zone/testimonials/index.tsx
 
@@ -42,11 +46,20 @@ type GoogleReview = {
   };
 };
 
+// a /api/google-reviews válasza (lib/shared/google-reviews.ts): már szűrve — csak 5 csillagos, képes vélemények
 type GooglePlacePayload = {
   configured?: boolean;
-  rating?: number;
-  userRatingCount?: number;
-  reviews?: GoogleReview[];
+  rating?: number | null;
+  count?: number | null;
+  mapsUrl?: string | null;
+  reviews?: {
+    name: string;
+    photo: string | null;
+    rating: number;
+    text: string;
+    when: string | null;
+    url: string | null;
+  }[];
 };
 
 export type UITestimonial = {
@@ -175,7 +188,6 @@ function Typewriter({
   kind: 'heading' | 'subheading';
 }) {
   const reduce = useReducedMotion();
-  const chars = useMemo(() => Array.from(text ?? ''), [text]);
 
   const wrap: Variants = reduce
     ? { hidden: {}, show: {} }
@@ -208,6 +220,24 @@ function Typewriter({
         },
       };
 
+  let n = 0;
+  const letters = (text ?? '').split(' ').map((word, wi, arr) => (
+    <React.Fragment key={`w-${wi}`}>
+      <span className="inline-block whitespace-nowrap">
+        {Array.from(word).map((c) => (
+          <motion.span
+            key={`c-${n++}`}
+            variants={charV}
+            className="inline-block"
+          >
+            {c}
+          </motion.span>
+        ))}
+      </span>
+      {wi < arr.length - 1 ? ' ' : null}
+    </React.Fragment>
+  ));
+
   if (reduce) {
     return as === 'h2' ? (
       <Heading as="h2" className={className}>
@@ -228,28 +258,10 @@ function Typewriter({
     >
       {as === 'h2' ? (
         <Heading as="h2" className={className}>
-          {chars.map((c, i) => (
-            <motion.span
-              key={`${c}-${i}`}
-              variants={charV}
-              className="inline-block"
-            >
-              {c === ' ' ? '\u00A0' : c}
-            </motion.span>
-          ))}
+          {letters}
         </Heading>
       ) : (
-        <Subheading className={className}>
-          {chars.map((c, i) => (
-            <motion.span
-              key={`${c}-${i}`}
-              variants={charV}
-              className="inline-block"
-            >
-              {c === ' ' ? '\u00A0' : c}
-            </motion.span>
-          ))}
-        </Subheading>
+        <Subheading className={className}>{letters}</Subheading>
       )}
     </motion.div>
   );
@@ -267,7 +279,7 @@ export const Testimonials = ({
   const reduce = useReducedMotion();
 
   const placeId = process.env.NEXT_PUBLIC_GOOGLE_PLACE_ID ?? '';
-  const googleHref = buildGooglePlaceHref(placeId);
+  const googleHrefFallback = buildGooglePlaceHref(placeId);
 
   const strapiList: StrapiTestimonial[] = useMemo(() => {
     if (Array.isArray(testimonials)) return testimonials as StrapiTestimonial[];
@@ -293,69 +305,46 @@ export const Testimonials = ({
   }, []);
 
   const googleReviews = (google?.reviews ?? []).filter(Boolean);
+  const googleHref = google?.mapsUrl || googleHrefFallback;
 
+  // 1) a valódi Google-vélemények (5 csillag, profilképpel) „Google” jelöléssel; 2) ha ezek nincsenek, a Strapiban
+  //    kézzel felvett vélemények — de SOSEM kapnak Google-jelölést vagy Google-dátumot (korábban összekeveredtek)
   const uiTestimonials: UITestimonial[] = useMemo(() => {
-    const merged: UITestimonial[] = [];
-
-    for (let i = 0; i < strapiList.length; i++) {
-      const s = strapiList[i];
-      const g = googleReviews[i];
-
-      const sText = (s?.text ?? '').trim();
-      const gText = pickGoogleReviewText(g);
-
-      const sFirst = (s?.user?.firstname ?? '').trim();
-      const sLast = (s?.user?.lastname ?? '').trim();
-      const sName = [sFirst, sLast].filter(Boolean).join(' ').trim();
-      const gName = (g?.authorAttribution?.displayName ?? '').trim();
-
-      const sJob = (s?.user?.job ?? '').trim();
-
-      const avatarStrapi = getMediaUrl(s?.user?.image);
-      const avatarGoogle = (g?.authorAttribution?.photoUri ?? '').trim();
-
-      const text = !isBlank(sText) ? sText : gText;
-      if (!text) continue;
-
-      merged.push({
-        key: `s-${String(s?.id ?? i)}`,
-        text,
-        name: !isBlank(sName) ? sName : gName || 'Vendég',
-        job: !isBlank(sJob) ? sJob : g ? 'Google értékelő' : '',
-        avatarUrl: avatarStrapi || avatarGoogle || null,
-        publishedAtLabel: g?.relativePublishTimeDescription ?? null,
-        source: 'strapi',
-      });
+    if (googleReviews.length) {
+      return googleReviews.slice(0, 6).map((g, i) => ({
+        key: `g-${i}-${g.name}`,
+        text: g.text,
+        name: g.name,
+        job: 'Google-értékelés',
+        avatarUrl: g.photo,
+        publishedAtLabel: null, // a dátum nem kell (Dave)
+        source: 'google' as const,
+      }));
     }
-
-    if (merged.length < 6 && googleReviews.length > merged.length) {
-      const need = 6 - merged.length;
-      const extra = googleReviews.slice(merged.length, merged.length + need);
-
-      extra.forEach((g, idx) => {
-        const text = pickGoogleReviewText(g);
-        if (!text) return;
+    return strapiList
+      .map((s, i) => {
+        const text = (s?.text ?? '').trim();
+        if (!text) return null;
         const name =
-          (g?.authorAttribution?.displayName ?? '').trim() || 'Google értékelő';
-        const avatar = (g?.authorAttribution?.photoUri ?? '').trim();
-
-        merged.push({
-          key: `g-${g?.name ?? `${merged.length}-${idx}`}`,
+          [s?.user?.firstname, s?.user?.lastname]
+            .map((x) => (x ?? '').trim())
+            .filter(Boolean)
+            .join(' ') || 'Vendég';
+        return {
+          key: `s-${String(s?.id ?? i)}`,
           text,
           name,
-          job: 'Google értékelő',
-          avatarUrl: avatar || null,
-          publishedAtLabel: g?.relativePublishTimeDescription ?? null,
-          source: 'google',
-        });
-      });
-    }
-
-    return merged;
+          job: (s?.user?.job ?? '').trim(),
+          avatarUrl: getMediaUrl(s?.user?.image),
+          publishedAtLabel: null,
+          source: 'strapi' as const,
+        };
+      })
+      .filter(Boolean) as UITestimonial[];
   }, [strapiList, googleReviews]);
 
-  const avgRating = google?.rating;
-  const totalReviews = google?.userRatingCount;
+  const avgRating = google?.rating ?? undefined;
+  const totalReviews = google?.count ?? undefined;
 
   return (
     <div className="relative">
@@ -366,7 +355,7 @@ export const Testimonials = ({
         initial={reduce ? false : 'hidden'}
         whileInView={reduce ? undefined : 'show'}
         viewport={VIEWPORT}
-        className="relative mx-4 overflow-hidden rounded-3xl border border-charcoal bg-white"
+        className="relative mx-4 my-6 overflow-hidden rounded-3xl border border-charcoal bg-white md:my-10"
       >
         {/* prémium háttér – nincs extra “folt” */}
         <div className="pointer-events-none absolute inset-0">
@@ -391,7 +380,7 @@ export const Testimonials = ({
                     text={heading}
                     as="h2"
                     kind="heading"
-                    className="text-left text-4xl md:text-5xl font-light text-secondary leading-tight"
+                    className={`text-left ${SECTION_TITLE} text-secondary`}
                   />
                 </motion.div>
 
@@ -404,40 +393,27 @@ export const Testimonials = ({
                     text={sub_heading}
                     as="p"
                     kind="subheading"
-                    className="mt-5 md:mt-6 text-secondary text-sm md:text-base leading-relaxed text-left max-w-xl mx-auto md:mx-0"
+                    className="mt-5 md:mt-6 text-secondary text-[15px] lg:text-[17px] leading-relaxed text-left max-w-xl mx-auto md:mx-0"
                   />
                 </motion.div>
 
                 <motion.div variants={itemV} className="mt-7">
-                  <div className="flex items-center gap-2">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star
-                        key={i}
-                        className="h-5 w-5 text-muted fill-muted"
-                        strokeWidth={1.25}
-                      />
-                    ))}
-                  </div>
-
-                  <div className="mt-2 text-secondary text-sm md:text-base">
-                    {typeof avgRating === 'number' &&
-                    typeof totalReviews === 'number' ? (
-                      <>
+                  {/* valódi Google-értékelés, arányos csillagokkal (4,8 → 4 és 4/5 csillag) */}
+                  {typeof avgRating === 'number' &&
+                  typeof totalReviews === 'number' ? (
+                    <>
+                      <RatingStars value={avgRating} size={20} />
+                      <div className="mt-2 text-secondary text-sm md:text-base">
                         <span className="font-semibold">
-                          {avgRating.toFixed(1)}
+                          {avgRating.toFixed(1).replace('.', ',')}
                         </span>{' '}
-                        / 5.0{' '}
+                        / 5{' '}
                         <span className="text-secondary/60">
-                          több mint {totalReviews} 160 értékelés alapján
+                          · {totalReviews} Google-értékelés alapján
                         </span>
-                      </>
-                    ) : (
-                      <span className="text-secondary/60">
-                        4.9 / 5.0 Több mint{' '}
-                        <span className="font-bold">160</span> értékelés alapján
-                      </span>
-                    )}
-                  </div>
+                      </div>
+                    </>
+                  ) : null}
 
                   {googleHref ? (
                     <a

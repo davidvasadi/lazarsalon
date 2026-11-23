@@ -10,6 +10,8 @@ import { cn } from '@/lib/utils';
 
 // components/dynamic-zone/testimonials/slider.tsx
 
+// components/dynamic-zone/testimonials/slider.tsx
+
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 function clamp(n: number, min: number, max: number) {
@@ -240,7 +242,9 @@ export const TestimonialsSlider = ({
                       ) : null}
                       {r.job ? (
                         <>
-                          <span className="text-secondary/30">•</span>
+                          {r.publishedAtLabel ? (
+                            <span className="text-secondary/30">•</span>
+                          ) : null}
                           <span className="truncate">{r.job}</span>
                         </>
                       ) : null}
