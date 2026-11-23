@@ -6,6 +6,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 
 import { Heading } from '../elements/heading';
 import { Subheading } from '../elements/subheading';
+import { SECTION_TITLE } from '@/lib/shared/typography';
 
 const isExternalHref = (href: string) => /^https?:\/\//i.test(href);
 
@@ -334,14 +335,14 @@ export const Launches = ({
           <div className="text-left md:pt-12">
             <WriteInHeading
               text={heading}
-              className="text-left text-4xl md:text-6xl lg:text-7xl font-light text-secondary leading-[1.02]"
+              className={`text-left ${SECTION_TITLE} text-secondary`}
             />
 
             <GoldLine align="left" />
 
             <WriteInSubheading
               text={sub_heading}
-              className="mt-5 max-w-2xl mx-auto md:mx-0 text-left text-sm md:text-base leading-relaxed text-lightblack/80"
+              className="mt-5 max-w-2xl mx-auto md:mx-0 text-left text-[15px] lg:text-[17px] leading-relaxed text-lightblack/80"
             />
           </div>
 
@@ -476,9 +477,11 @@ export const Launches = ({
                             >
                               <div
                                 className={[
+                                  // jobbra hely a sarokszámnak (02), hogy a cím ne fusson bele
+                                  'pr-14 md:pr-32',
                                   'text-secondary leading-[1.06]',
                                   'text-[26px] sm:text-[30px]',
-                                  'md:text-5xl',
+                                  'md:text-[2.5rem]',
                                   'break-words',
                                   'hyphens-auto',
                                 ].join(' ')}

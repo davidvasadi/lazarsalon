@@ -31,6 +31,9 @@ import { Container } from '../../container';
 import { Heading } from '../../elements/heading';
 import { Subheading } from '../../elements/subheading';
 import { Card } from './card';
+import { SECTION_TITLE } from '@/lib/shared/typography';
+
+// components/dynamic-zone/how-it-works/index.tsx
 
 // components/dynamic-zone/how-it-works/index.tsx
 
@@ -763,12 +766,12 @@ export const HowItWorks = ({
         {(heading || sub_heading) && (
           <header className="mb-12">
             {heading ? (
-              <Heading className="text-left text-4xl md:text-6xl lg:text-7xl font-light text-secondary leading-tight">
+              <Heading className={`text-left ${SECTION_TITLE} text-secondary`}>
                 {heading}
               </Heading>
             ) : null}
             {sub_heading ? (
-              <Subheading className="mt-4 max-w-xl text-sm leading-relaxed text-lightblack text-left">
+              <Subheading className="mt-4 max-w-xl text-[15px] lg:text-[17px] leading-relaxed text-lightblack text-left">
                 {sub_heading}
               </Subheading>
             ) : null}

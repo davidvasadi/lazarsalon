@@ -9,12 +9,14 @@ import {
 import { ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import React, { useEffect, useMemo, useState } from 'react';
 
-import TeamMembers from './team-members';
+import { TeamCompact, TeamRows } from './team-members';
 import { Container } from '@/components/container';
 import { Heading } from '@/components/elements/heading';
 import { Subheading } from '@/components/elements/subheading';
+import { SECTION_TITLE } from '@/lib/shared/typography';
 
 /** IMPORTANT: ne defaultolj localhostra prod miatt */
 const STRAPI_BASE = (
@@ -508,6 +510,9 @@ export const TeamSection: React.FC<Props> = ({
   locale = 'hu',
 }) => {
   const reduce = useReducedMotion();
+  // főoldalon kompakt szakember-sor, a Csapat oldalon váltakozó blokkok
+  const pathname = usePathname() ?? '';
+  const isHome = /^\/(?:[a-z]{2})?\/?$/.test(pathname);
 
   const title = norm(heading);
   const sub = norm(sub_heading);
@@ -604,57 +609,110 @@ export const TeamSection: React.FC<Props> = ({
 
   if (!hasHeader && !hasCTA && !avatar && !hasMembers) return null;
 
+  // a CTA-ból csak a kép és a link kell: a cím mellé kerül (egy cím, egy alcím — 2026-11-23)
+  const cover = mediaUrl(cta?.cover);
+  const btn = (Array.isArray(cta?.CTAs) ? cta!.CTAs : [])
+    .map((b) => ({
+      text: norm(b?.text),
+      url: norm(b?.URL),
+      target: b?.target ?? null,
+    }))
+    .find((b) => b.text && b.url);
+
   return (
-    <section className="py-32 ">
+    <section className="py-24 md:py-32">
       <Container>
-        {/* HEADER */}
-        {hasHeader ? (
-          <div className="max-w-2xl mb-16 text-left">
-            {title ? (
-              <WriteInHeading
-                text={title}
-                className={[
-                  'text-left text-4xl md:text-6xl',
-                  'font-light text-lightblack',
-                  'leading-tight',
-                  'max-w-xl',
-                ].join(' ')}
-              />
-            ) : null}
+        {/* FEJ: balra cím, alcím, link (és ha nincs tagkártya, az avatar); jobbra a kép a cím magasságától */}
+        {hasHeader || cover ? (
+          <div className="mb-14 grid grid-cols-1 gap-10 lg:grid-cols-12 lg:items-start">
+            <div className="text-left lg:col-span-7">
+              {title ? (
+                <WriteInHeading
+                  text={title}
+                  className={`text-left ${SECTION_TITLE} text-lightblack`}
+                />
+              ) : null}
 
-            {title ? (
-              <motion.div
-                className="mt-6 h-[2px] w-28 origin-left rounded-full bg-muted/80"
-                initial={underlineInitial}
-                whileInView={underlineInView}
-                viewport={VIEWPORT}
-                transition={underlineTransition}
-              />
-            ) : null}
+              {title ? (
+                <motion.div
+                  className="mt-6 h-[2px] w-28 origin-left rounded-full bg-muted/80"
+                  initial={underlineInitial}
+                  whileInView={underlineInView}
+                  viewport={VIEWPORT}
+                  transition={underlineTransition}
+                />
+              ) : null}
 
-            {sub ? (
-              <WriteInSubheading
-                text={sub}
-                className={[
-                  'mt-6 text-left text-secondary/70',
-                  'text-[15px] sm:text-[16px] lg:text-[18px]',
-                  'leading-relaxed',
-                  'max-w-2xl',
-                ].join(' ')}
-              />
+              {sub ? (
+                <WriteInSubheading
+                  text={sub}
+                  className={[
+                    'mt-6 text-left text-secondary/70',
+                    'text-[15px] lg:text-[17px]',
+                    'leading-relaxed',
+                    'max-w-2xl',
+                  ].join(' ')}
+                />
+              ) : null}
+
+              {btn ? (
+                <div className="mt-8">
+                  <CtaLink
+                    text={btn.text!}
+                    href={btn.url!}
+                    target={btn.target}
+                  />
+                </div>
+              ) : null}
+
+              {/* az alapító kis avatarja a link alatt (főoldalon) */}
+              {avatar && (isHome || !hasMembers) ? (
+                <div className="mt-8">
+                  <AvatarStrip avatar={avatar} />
+                </div>
+              ) : null}
+            </div>
+
+            {cover ? (
+              <div className="lg:col-span-5">
+                <div className="relative overflow-hidden rounded-3xl border border-secondary/10">
+                  <div className="relative aspect-[4/3]">
+                    <Image
+                      src={cover}
+                      alt={mediaAlt(cta?.cover, title)}
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 720px"
+                      className="object-cover"
+                    />
+                  </div>
+                </div>
+              </div>
             ) : null}
           </div>
         ) : null}
 
-        {/* TEAM MEMBERS UTÁNA */}
-        {hasMembers ? (
-          <TeamMembers members={team} showBooking={!!show_booking} />
-        ) : null}
-        {/* SORREND: CTA + AVATAR ELŐBB */}
-        {cta ? (
-          <TeamCTA cta={cta} avatar={avatar} />
-        ) : avatar ? (
-          <AvatarStrip avatar={avatar} />
+        {/* CSAPATTAGOK */}
+        {/* főoldalon kis, fekete-fehér kártyák (rámutatásra színes) → a Csapat oldal blokkjaihoz; a Csapat oldalon
+            mindenki saját, színes blokkot kap (kép és szöveg felváltva) */}
+        {hasMembers && isHome ? (
+          <div className="mt-20 border-t border-secondary/15 pt-14 md:mt-24 md:pt-16">
+            {/* a szakember-sor saját, kulcsszavas fejléce — látványosan elválasztja a fenti blokktól */}
+            <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div className="max-w-2xl">
+                <h3 className="text-2xl font-light leading-tight text-lightblack md:text-3xl">
+                  Fodrász és köröm specialisták Budapest VI. kerületében
+                </h3>
+                <p className="mt-3 text-[15px] leading-relaxed text-secondary/70 md:text-[16px]">
+                  Balayage, hajfestés, göndör haj, női és férfi hajvágás, nail
+                  art – minden szakterületre saját specialista.
+                </p>
+              </div>
+              <CtaLink text="Csapat oldal" href={`/${locale}/csapat`} />
+            </div>
+            <TeamCompact members={team} locale={locale} />
+          </div>
+        ) : hasMembers ? (
+          <TeamRows members={team} />
         ) : null}
       </Container>
     </section>

@@ -11,7 +11,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   ChevronRight,
-  Instagram,
+  Expand,
   X,
 } from 'lucide-react';
 import Image from 'next/image';
@@ -21,6 +21,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Container } from '@/components/container';
 import { Heading } from '@/components/elements/heading';
 import { Subheading } from '@/components/elements/subheading';
+import { SECTION_TITLE } from '@/lib/shared/typography';
 import { cn } from '@/lib/utils';
 
 /** IMPORTANT: ne defaultolj localhostra prod miatt */
@@ -422,7 +423,7 @@ export function Gallery({
     const alt = mediaAlt(it.image, it.title ?? undefined);
 
     return (
-      <div className="relative h-full overflow-hidden rounded-lg border border-secondary/25 bg-lightblack/[0.03]">
+      <div className="relative h-full overflow-hidden rounded-3xl bg-lightblack/[0.03]">
         <div
           className={cn(
             'relative',
@@ -443,16 +444,17 @@ export function Gallery({
             />
           ) : null}
 
-          <div className="absolute inset-0 bg-gradient-to-t from-lightblack/80 via-lightblack/18 to-transparent opacity-95 transition-opacity duration-300 group-hover:opacity-100" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
 
-          <div className="absolute bottom-4 left-4 right-14 z-10">
+          {/* szöveg: kis címke (olvasható pill) + cím legfeljebb 2 sorban; jobbra hely a nyílnak */}
+          <div className="absolute bottom-3 left-3 right-14 z-10 md:bottom-4 md:left-4 md:right-16">
             {it.kicker ? (
-              <div className="text-muted text-[11px] md:text-xs">
+              <span className="inline-block text-[11px] text-muted md:text-xs">
                 {it.kicker}
-              </div>
+              </span>
             ) : null}
             {it.title ? (
-              <div className="mt-1 text-charcoal text-lg font-semibold leading-tight drop-shadow-[0_2px_10px_rgba(0,0,0,0.35)]">
+              <div className="mt-1.5 line-clamp-2 text-[15px] font-medium leading-snug text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.35)] md:text-lg">
                 {it.title}
               </div>
             ) : null}
@@ -464,7 +466,10 @@ export function Gallery({
 
   function Card(it: GalleryItem, idx: number, variant: 'mosaic' | 'simple') {
     const instaHref = (it.link_url ?? '').trim();
-    const instaTarget = ((it.link_target ?? '_blank') as string) || '_blank';
+    const instaTarget =
+      ((it.link_target ??
+        (/^https?:/.test(instaHref) ? '_blank' : '_self')) as string) ||
+      '_self';
 
     return (
       <div
@@ -480,7 +485,7 @@ export function Gallery({
         }}
         aria-label={it.title ? `Megnyitás: ${it.title}` : 'Megnyitás'}
       >
-        <div className="absolute right-3 top-3 z-30 opacity-100 transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100">
+        <div className="absolute right-3 top-3 z-30 hidden opacity-0 transition-opacity duration-300 md:block md:group-hover:opacity-100">
           <button
             type="button"
             onClick={(e) => {
@@ -490,7 +495,7 @@ export function Gallery({
             className="grid h-9 w-9 place-items-center rounded-full border border-lightblack/15 bg-white/95 text-lightblack shadow-sm backdrop-blur-sm transition-transform duration-200 hover:scale-[1.03]"
             aria-label="Kép megnyitása"
           >
-            <ArrowUpRight className="h-4 w-4" />
+            <Expand className="h-4 w-4" />
           </button>
         </div>
 
@@ -500,10 +505,10 @@ export function Gallery({
             target={instaTarget}
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="absolute bottom-3 right-3 z-30 grid h-9 w-9 place-items-center rounded-full border border-lightblack/15 bg-white/95 text-lightblack shadow-sm backdrop-blur-sm transition-transform duration-200 hover:scale-[1.03]"
-            aria-label="Megnyitás Instagramon"
+            className="absolute bottom-3 right-3 z-30 grid h-8 w-8 md:h-9 md:w-9 place-items-center rounded-full border border-lightblack/15 bg-white/95 text-lightblack shadow-sm backdrop-blur-sm transition-transform duration-200 hover:scale-[1.03]"
+            aria-label={it.title ? `${it.title} – részletek` : 'Részletek'}
           >
-            <Instagram className="h-4 w-4" />
+            <ArrowUpRight className="h-4 w-4" />
           </a>
         ) : null}
 
@@ -524,10 +529,8 @@ export function Gallery({
                     text={heading}
                     className={cn(
                       // ✅ mobil: kisebb, jobb leading, ne törjön idétlenül
-                      'text-left font-light leading-[1.05] text-secondary',
-                      'text-[clamp(32px,8.5vw,44px)]',
-                      // ✅ md+
-                      'md:text-5xl md:leading-tight'
+                      'text-left text-secondary',
+                      SECTION_TITLE
                     )}
                   />
                 ) : null}
@@ -549,12 +552,22 @@ export function Gallery({
 
               {/* ✅ gomb csak md+ headerben (mobilon majd a képek alatt) */}
               {showHeaderButton ? (
-                <div className="hidden md:block">
+                <div className="hidden md:flex md:items-center md:gap-6">
                   <HeaderButton
                     text={btnText}
                     href={btnUrl}
                     target={btnTarget}
                   />
+                  {/* a munkák nagy része az Instagramon — a kártyák a szolgáltatásoldalakra visznek */}
+                  <a
+                    href="https://www.instagram.com/lazarssalon/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-[#B2933D] hover:underline underline-offset-4"
+                  >
+                    Kövess Instagramon
+                    <ArrowUpRight className="h-4 w-4" />
+                  </a>
                 </div>
               ) : null}
             </div>
@@ -599,13 +612,22 @@ export function Gallery({
             </div>
           )}
           {showHeaderButton ? (
-            <div className="mt-4">
+            <div className="mt-4 flex flex-col items-start gap-4">
               <HeaderButton
                 text={btnText}
                 href={btnUrl}
                 target={btnTarget}
                 size="mobile"
               />
+              <a
+                href="https://www.instagram.com/lazarssalon/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-[#B2933D] hover:underline underline-offset-4"
+              >
+                Kövess Instagramon
+                <ArrowUpRight className="h-4 w-4" />
+              </a>
             </div>
           ) : null}
         </div>

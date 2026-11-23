@@ -15,6 +15,7 @@ import { Container } from '../container';
 import { Button } from '../elements/button';
 import { Heading } from '../elements/heading';
 import { Subheading } from '../elements/subheading';
+import { SECTION_TITLE } from '@/lib/shared/typography';
 
 type ButtonTarget = '_self' | '_blank' | '_parent' | '_top' | string;
 
@@ -105,6 +106,8 @@ function joinLocaleHref(locale: string, url?: string | null) {
   if (isExternalUrl(u)) return u; // külső/abszolút marad
 
   const path = u.startsWith('/') ? u : `/${u}`;
+  // ha a Strapiban már nyelvvel együtt van megadva (/hu/...), ne kerüljön elé még egyszer
+  if (path === `/${locale}` || path.startsWith(`/${locale}/`)) return path;
   return `/${locale}${path}`.replace(/\/{2,}/g, '/');
 }
 
@@ -321,7 +324,7 @@ export const CTA = ({
       initial={reduce ? false : 'hidden'}
       whileInView={reduce ? undefined : 'show'}
       viewport={VIEWPORT}
-      className="relative mx-4 overflow-hidden rounded-3xl border border-charcoal bg-white"
+      className="relative mx-4 my-6 overflow-hidden rounded-3xl border border-charcoal bg-white md:my-10"
     >
       {/* 2026 premium background */}
       <div className="pointer-events-none absolute inset-0">
@@ -345,13 +348,13 @@ export const CTA = ({
             <motion.div variants={leftStackV} className="flex flex-col">
               <WriteInHeading
                 text={heading}
-                className="text-left text-4xl md:text-5xl font-light text-secondary leading-tight"
+                className={`text-left ${SECTION_TITLE} text-secondary`}
               />
 
               {sub_heading ? (
                 <WriteInSubheading
                   text={sub_heading}
-                  className="mt-5 md:mt-6 text-secondary text-sm md:text-base leading-relaxed text-left max-w-xl mx-auto md:mx-0"
+                  className="mt-5 md:mt-6 text-secondary text-[15px] lg:text-[17px] leading-relaxed text-left max-w-xl mx-auto md:mx-0"
                 />
               ) : null}
 

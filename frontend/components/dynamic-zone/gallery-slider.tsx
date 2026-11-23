@@ -23,6 +23,7 @@ import React, {
 import { Container } from '@/components/container';
 import { Heading } from '@/components/elements/heading';
 import { Subheading } from '@/components/elements/subheading';
+import { SECTION_TITLE } from '@/lib/shared/typography';
 import { cn } from '@/lib/utils';
 
 type MediaLike = any;
@@ -323,10 +324,11 @@ export function GallerySliderSection(
               <WriteInHeading
                 text={heading}
                 className={[
-                  'text-left text-4xl md:text-6xl',
-                  'lg:text-7xl font-light text-secondary',
-                  'leading-tight',
-                  'max-w-xl',
+                  // egységes szakaszcím (lib/shared/typography); ha egy hosszú szó nem férne ki, elválasztva törik
+                  'text-left',
+                  SECTION_TITLE,
+                  'text-secondary',
+                  'hyphens-auto break-words',
                 ].join(' ')}
               />
 
@@ -343,7 +345,7 @@ export function GallerySliderSection(
                   text={sub}
                   className={[
                     'mt-6 text-left text-secondary',
-                    'text-[15px] sm:text-[16px] lg:text-[18px]',
+                    'text-[15px] lg:text-[17px]',
                     'leading-relaxed',
                     'max-w-2xl',
                   ].join(' ')}

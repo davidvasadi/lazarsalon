@@ -22,6 +22,7 @@ import { Button } from '../elements/button';
 import { Heading } from '../elements/heading';
 import { Subheading } from '../elements/subheading';
 import { AmbientColor } from '@/components/decorations/ambient-color';
+import { fmtRating, useGoogleRating } from '@/lib/shared/use-google-rating';
 
 /* ──────────────────────────────────────────────────────────────
   Constants
@@ -67,6 +68,8 @@ function joinLocaleHref(locale: string, url?: string | null) {
   if (u.startsWith('#')) return u;
   if (isExternalUrl(u)) return u;
   const path = u.startsWith('/') ? u : `/${u}`;
+  // ha a Strapiban már nyelvvel együtt van megadva (/hu/...), ne kerüljön elé még egyszer
+  if (path === `/${locale}` || path.startsWith(`/${locale}/`)) return path;
   return `/${locale}${path}`.replace(/\/{2,}/g, '/');
 }
 
@@ -129,6 +132,10 @@ function ThemeColorOnHero({
   heroColor: string;
   pageColor: string;
 }) {
+  // iOS 26 Safari: a felső (óra / notch) sávot NEM a theme-color, hanem a lap tetejét érintő fixed elem háttere színezi
+  // (ios-safari-mobile skill, 1. pont; a davelopment booking bevált megoldása). Amíg a hero látszik, egy ≥8 px-es sötét
+  // réteg ül a lap tetején; utána eltűnik (display: none — a színváltást a Safari nem követi, az eltűnést igen).
+  const barRef = React.useRef<HTMLDivElement>(null);
   useEffect(() => {
     const hero = document.getElementById(heroId);
     if (!hero) return;
@@ -140,6 +147,8 @@ function ThemeColorOnHero({
       ([entry]) => {
         const visible = entry.isIntersecting && entry.intersectionRatio > 0;
         setThemeColor(visible ? heroColor : pageColor);
+        if (barRef.current)
+          barRef.current.style.display = visible ? '' : 'none';
       },
       { threshold: [0, 0.01] }
     );
@@ -148,7 +157,14 @@ function ThemeColorOnHero({
     return () => io.disconnect();
   }, [heroId, heroColor, pageColor]);
 
-  return null;
+  return (
+    <div
+      ref={barRef}
+      aria-hidden
+      className="pointer-events-none fixed inset-x-0 top-0 z-[60] h-[max(8px,env(safe-area-inset-top))] lg:hidden"
+      style={{ backgroundColor: heroColor }}
+    />
+  );
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -203,6 +219,7 @@ export const Hero = ({
   parallax = false,
 }: Props) => {
   const reduceMotion = useReducedMotion();
+  const gRating = useGoogleRating();
   const sectionRef = useRef<HTMLElement>(null);
 
   const pathname = usePathname() || '';
@@ -268,7 +285,8 @@ export const Hero = ({
   const hasDuration = dur.length > 0;
 
   // ezek csak meta theme-colorhoz — vizuális “notch szín” most a hero backgroundból jön!
-  const HERO_THEME = '#141414';
+  // a hero tetejének tényleges színe (a sötétített háttérkép a lap tetején, iPhone-on lemérve) — a felső sáv ezt veszi fel
+  const HERO_THEME = '#23262a';
   const PAGE_THEME = '#F5F5F5';
 
   return (
@@ -350,7 +368,7 @@ export const Hero = ({
       </motion.div>
 
       {/* Content */}
-      <div className="relative z-20 mx-auto flex min-h-[100svh] max-w-7xl items-center px-4 py-16 md:px-8">
+      <div className="relative z-20 mx-auto flex min-h-[100svh] max-w-7xl items-end px-4 pb-40 pt-28 sm:items-center sm:py-16 md:px-8">
         <div className="w-full max-w-3xl">
           {/* Heading */}
           <motion.div
@@ -537,15 +555,22 @@ export const Hero = ({
             >
               <div className={infoTitleClass}>
                 <StarGlyph className="h-3.5 w-3.5 shrink-0 text-muted sm:h-4 sm:w-4" />
+                {/* valódi Google-értékelés (hetente frissül) — amíg betölt, csak a felirat látszik */}
                 <span className="truncate text-muted opacity-90">
-                  <span className="text-charcoal">4.9</span>{' '}
+                  {gRating ? (
+                    <>
+                      <span className="text-charcoal">
+                        {fmtRating(gRating.rating)}
+                      </span>{' '}
+                    </>
+                  ) : null}
                   <span className="text-muted opacity-90">
-                    Prémium Értékelés
+                    Google-értékelés
                   </span>
                 </span>
               </div>
               <div className={`${infoSubClass} truncate`}>
-                TÖBB MINT 160+ ELÉGEDETT VENDÉG
+                {gRating ? `${gRating.count} VÉLEMÉNY ALAPJÁN` : '\u00a0'}
               </div>
             </motion.div>
 
@@ -568,7 +593,7 @@ export const Hero = ({
                 </span>
               </div>
               <div className={`${infoSubClass} ml-auto truncate`}>
-                NYITVA: H–Szo 09:00 – 20:00
+                NYITVA: H–P 10–20 · Szo 10–16
               </div>
             </motion.div>
           </div>

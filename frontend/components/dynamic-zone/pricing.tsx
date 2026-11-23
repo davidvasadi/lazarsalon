@@ -23,6 +23,8 @@ import { Container } from '../container';
 import { Heading } from '../elements/heading';
 import { Subheading } from '../elements/subheading';
 import { normalizeSectionId } from '../ui/section-id';
+import { fmtDuration, fmtPrice, pageOfPlan } from '@/lib/shared/plan-pages';
+import { SECTION_TITLE } from '@/lib/shared/typography';
 import { cn } from '@/lib/utils';
 
 /** IMPORTANT: ne defaultolj localhostra prod miatt */
@@ -208,7 +210,21 @@ function normalizePlan(raw: any): Plan {
 }
 
 function formatPrice(p?: string | null) {
-  return (p ?? '').toString().trim();
+  return fmtPrice(p);
+}
+
+/** ha egy tételnek nincs saját képe, ugyanannak a szolgáltatásnak egy másik tételéét kapja (egységes lista, nincs ikon) */
+function coverWithFallback(plan: Plan | null | undefined, list: Plan[]) {
+  const own = getPlanCover(plan);
+  if (own || !plan?.name) return own;
+  const page = pageOfPlan(plan.name);
+  for (const x of list) {
+    if (x?.name && pageOfPlan(x.name) === page) {
+      const c = getPlanCover(x);
+      if (c) return { ...c, alt: plan.name as string };
+    }
+  }
+  return null;
 }
 
 type CtaBtn = { href: string; target?: string; text: string };
@@ -487,13 +503,13 @@ export function Pricing({
         <div className="mb-8 md:mb-10">
           <WriteInHeading
             text={heading}
-            className="text-left text-3xl sm:text-4xl md:text-5xl font-light text-secondary leading-tight"
+            className={`text-left ${SECTION_TITLE} text-secondary`}
           />
 
           {sub_heading ? (
             <WriteInSubheading
               text={sub_heading}
-              className="mt-4 md:mt-6 text-secondary text-sm md:text-base leading-relaxed text-left max-w-xl"
+              className="mt-4 md:mt-6 text-secondary text-[15px] lg:text-[17px] leading-relaxed text-left max-w-xl"
             />
           ) : null}
         </div>
@@ -522,14 +538,14 @@ export function Pricing({
                       Válassz szolgáltatást
                     </div>
 
-                    <div className="max-h-[60vh] overflow-y-auto pr-1">
+                    <div>
                       <div className="flex flex-col">
                         {filtered.map((p, idx) => {
                           const isActive = idx === selected;
                           const Icon = pickIcon(p.name);
                           const price = formatPrice(p.price);
-                          const duration = (p.number ?? '').toString().trim();
-                          const cover = getPlanCover(p);
+                          const duration = fmtDuration(p.number);
+                          const cover = coverWithFallback(p, filtered);
 
                           return (
                             <motion.button
@@ -656,7 +672,7 @@ export function Pricing({
             <motion.div
               variants={colV}
               ref={detailRef}
-              className="relative scroll-mt-32"
+              className="relative scroll-mt-32 lg:sticky lg:top-28 lg:self-start"
             >
               <motion.div variants={stackV} className="relative">
                 <motion.div variants={itemV}>
@@ -690,7 +706,7 @@ export function Pricing({
                         }
                         className="relative"
                       >
-                        <Detail plan={current} />
+                        <Detail plan={current} list={filtered} />
                       </motion.div>
                     </AnimatePresence>
                   </div>
@@ -704,16 +720,15 @@ export function Pricing({
   );
 }
 
-function Detail({ plan }: { plan: Plan }) {
+function Detail({ plan, list }: { plan: Plan; list: Plan[] }) {
   const reduce = useReducedMotion();
 
-  const Icon = pickIcon(plan?.name);
   const price = formatPrice(plan?.price);
-  const duration = (plan?.number ?? '').toString().trim();
+  const duration = fmtDuration(plan?.number);
 
   const ctaButtons = getCtaButtons(plan);
 
-  const cover = getPlanCover(plan);
+  const cover = coverWithFallback(plan, list);
 
   const perks = Array.isArray(plan?.perks) ? plan.perks : [];
   const additional = Array.isArray(plan?.additional_perks)
@@ -737,20 +752,16 @@ function Detail({ plan }: { plan: Plan }) {
     <div>
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3 min-w-0">
-          <div className="grid h-10 w-10 sm:h-11 sm:w-11 place-items-center rounded-xl border border-black/10 bg-white shrink-0">
-            <Icon className="h-5 w-5 text-muted" />
-          </div>
-
           <div className="min-w-0">
             <div className="text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight text-lightblack leading-snug break-words [overflow-wrap:anywhere]">
               {plan?.name ?? 'Szolgáltatás'}
             </div>
 
-            <div className="mt-1 text-sm text-secondary">
-              {plan?.featured
-                ? 'Kiemelt szolgáltatás'
-                : 'Ár + idő + foglalás egyben'}
-            </div>
+            {plan?.featured ? (
+              <div className="mt-1 text-sm text-secondary">
+                Kiemelt szolgáltatás
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -784,10 +795,11 @@ function Detail({ plan }: { plan: Plan }) {
         ) : null}
       </div>
 
-      <p className="mt-4 text-sm leading-relaxed text-secondary break-words [overflow-wrap:anywhere]">
-        {longText ||
-          'Adj a Plan-hez egy hosszabb leírást (lásd lent: long_description), és ide automatikusan bekerül.'}
-      </p>
+      {longText ? (
+        <p className="mt-4 text-sm leading-relaxed text-secondary break-words [overflow-wrap:anywhere]">
+          {longText}
+        </p>
+      ) : null}
 
       {bullets.length ? (
         <div className="mt-5 grid gap-2">
