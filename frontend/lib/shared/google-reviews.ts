@@ -6,6 +6,8 @@ import { unstable_cache } from 'next/cache';
 import fs from 'node:fs';
 import path from 'node:path';
 
+import SEED_JSON from './google-place-seed.json';
+
 const WEEK = 60 * 60 * 24 * 7;
 
 export type GoogleReview = {
@@ -61,6 +63,11 @@ const cachedPlace = unstable_cache(fetchPlace, ['google-place-lazars-v1'], {
   tags: ['google-place'],
 });
 
+// Végső tartalék: a 2026-11-23-i valós lekérés (a kódban). Ha nincs kulcs, a Google nem érhető el vagy betelt a napi
+// keret, akkor is a VALÓDI értékelés és vélemények látszanak — soha nem üres hely vagy régi, kitalált szöveg.
+// Amint egy élő lekérés sikerül, az felülírja (hetente frissül).
+const SEED = SEED_JSON as GooglePlace;
+
 let lastError = 0;
 
 // Tartalék-tár: a legutóbbi sikeres lekérés egy fájlban (.cache/, gitignore-olt). Ahol a fájlrendszer nem írható (pl.
@@ -80,15 +87,15 @@ function readLastGood(): GooglePlace | null {
   }
 }
 
-export async function getGooglePlace(): Promise<GooglePlace | null> {
+export async function getGooglePlace(): Promise<GooglePlace> {
   if (!process.env.GOOGLE_PLACES_API_KEY || !process.env.GOOGLE_PLACE_ID)
-    return null;
+    return readLastGood() ?? SEED;
   // ha még SOSINCS elmentett adat és épp most volt hiba, egy napig ne próbálkozzon újra
   if (
     process.env.NODE_ENV === 'production' &&
     Date.now() - lastError < 24 * 3600 * 1000
   )
-    return null;
+    return readLastGood() ?? SEED;
   try {
     const place = await cachedPlace();
     saveLastGood(place);
@@ -99,7 +106,7 @@ export async function getGooglePlace(): Promise<GooglePlace | null> {
     const last = readLastGood();
     if (!last)
       console.warn('[google-place]', e instanceof Error ? e.message : e);
-    return last;
+    return last ?? SEED;
   }
 }
 

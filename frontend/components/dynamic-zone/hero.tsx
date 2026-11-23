@@ -551,7 +551,8 @@ export const Hero = ({
               transition={
                 reduceMotion ? instant : { duration: 0.9, delay: 1.05 }
               }
-              className="min-w-0 flex-1"
+              // értékelés nélkül (betöltés közben) a felirat se látsszon szám nélkül
+              className={`min-w-0 flex-1 ${gRating ? '' : 'invisible'}`}
             >
               <div className={infoTitleClass}>
                 <StarGlyph className="h-3.5 w-3.5 shrink-0 text-muted sm:h-4 sm:w-4" />
