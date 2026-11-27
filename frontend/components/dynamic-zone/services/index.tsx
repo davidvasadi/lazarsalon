@@ -20,9 +20,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 
 import { Container } from '@/components/container';
 import { RatingStars } from '@/components/elements/rating-stars';
-import { huf, pageOfPlan, parsePrice } from '@/lib/shared/plan-pages';
+import { cardMinPrices, huf } from '@/lib/shared/plan-pages';
 import { SECTION_TITLE } from '@/lib/shared/typography';
 import { fmtRating, useGoogleRating } from '@/lib/shared/use-google-rating';
+
+// components/dynamic-zone/services/index.tsx
+
+// components/dynamic-zone/services/index.tsx
 
 // components/dynamic-zone/services/index.tsx
 
@@ -99,6 +103,9 @@ function mediaUrl(m?: StrapiMedia | null) {
 }
 const coverOf = (p: PageLike) => mediaUrl(hero(p)?.cover ?? null);
 
+/** Ezeken a kártyákon nincs időtartam (Dave, 2026-11-26: a műkörmösnél ne legyen perc). */
+const NO_DURATION = new Set(['mukorom-es-manikur']);
+
 /** szolgáltatásoldal → legalacsonyabb ár az árlistából (élőben a Strapiból) */
 function useMinPrices() {
   const [min, setMin] = useState<Record<string, number>>({});
@@ -114,14 +121,7 @@ function useMinPrices() {
     fetch(`${STRAPI_BASE}/api/plans?${q}`, { signal: ac.signal })
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
-        const out: Record<string, number> = {};
-        for (const p of j?.data ?? []) {
-          const v = parsePrice(p?.price).min;
-          if (!p?.name || !v) continue;
-          const slug = pageOfPlan(p.name);
-          out[slug] = Math.min(out[slug] ?? Infinity, v);
-        }
-        setMin(out);
+        setMin(cardMinPrices(j?.data ?? []));
       })
       .catch(() => {});
     return () => ac.abort();
@@ -131,7 +131,7 @@ function useMinPrices() {
 
 function metaLine(p: PageLike, min: Record<string, number>) {
   const price = min[p.slug];
-  const dur = durationOf(p);
+  const dur = NO_DURATION.has(p.slug) ? null : durationOf(p);
   return (
     [price ? `${huf(price)}-tól` : null, dur].filter(Boolean).join(' · ') ||
     null

@@ -22,3 +22,11 @@ body {
     text-wrap: balance;
   }
 }
+
+/* Telefonon (érintőképernyő) a beúszó animációk elmosása (framer-motion inline `filter: blur(...)`) kikapcsolva —
+   a Safarinak ez a legdrágább, ettől szaggatott a görgetés. A halvány felúszás marad; gépen változatlan. (2026-11-27) */
+@media (hover: none) and (pointer: coarse) {
+  [style*='filter: blur'] {
+    filter: none !important;
+  }
+}

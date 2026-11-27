@@ -21,6 +21,8 @@ import { SECTION_TITLE } from '@/lib/shared/typography';
 
 // components/dynamic-zone/testimonials/index.tsx
 
+// components/dynamic-zone/testimonials/index.tsx
+
 type StrapiTestimonial = {
   id?: number | string;
   text?: string | null;
@@ -77,7 +79,7 @@ const STRAPI_BASE = (process.env.NEXT_PUBLIC_STRAPI_URL ?? '').replace(
   ''
 );
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
-const VIEWPORT = { once: false, amount: 0.26 } as const;
+const VIEWPORT = { once: true, amount: 0.26 } as const;
 
 const sectionV: Variants = {
   hidden: { opacity: 0, y: 16, filter: 'blur(14px)' },

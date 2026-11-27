@@ -12,6 +12,20 @@ const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 const AW_ID = 'AW-17951872435';
 const AW_BOOKING = 'AW-17951872435/Z5irCLnj_r0dELOrj_BC';
 const BOOKING_LINK = 'a[href*="alteg.io"]';
+// 2026-11-27: telefonhívás-gomb kattintás és sikeres űrlapküldés is külön Ads-konverzió (szintén Analytics nélkül)
+const AW_CALL = 'AW-17951872435/o7iMCOay2sAdELOrj_BC'; // „Hívás – telefon gomb (web)”
+const AW_FORM = 'AW-17951872435/sDVBCOmy2sAdELOrj_BC'; // „Üzenet – kapcsolati űrlap (web)”
+const CALL_LINK = 'a[href^="tel:"]';
+/** a kapcsolati űrlap sikeres beküldésekor ezt az eseményt küldi (form-next-to-section.tsx) */
+export const CONTACT_SENT_EVENT = 'lazar:contact-sent';
+
+const consentGranted = () => {
+  try {
+    return localStorage.getItem(CONSENT_KEY) === 'granted';
+  } catch {
+    return false;
+  }
+};
 
 let __gaLoaded = false;
 
@@ -81,16 +95,22 @@ function updateGtagConsent(granted: boolean) {
 export const AIToast = () => {
   const [isOpen, setIsOpen] = useState(false);
 
-  // foglalás gomb → Google Ads konverzió (csak ha elfogadta a sütiket; beacon: az Altegióra ugrás előtt is elmegy)
+  // foglalás gomb / telefon gomb → Google Ads konverzió (csak ha elfogadta a sütiket; beacon: az oldalváltás előtt is elmegy)
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
-      const a = (e.target as Element | null)?.closest?.(BOOKING_LINK);
-      if (!a) return;
-      try {
-        if (localStorage.getItem(CONSENT_KEY) !== 'granted') return;
-      } catch {
+      const target = e.target as Element | null;
+      const call = target?.closest?.(CALL_LINK);
+      if (call) {
+        if (!consentGranted()) return;
+        (window as any).gtag?.('event', 'conversion', {
+          send_to: AW_CALL,
+          transport_type: 'beacon',
+        });
         return;
       }
+      const a = target?.closest?.(BOOKING_LINK);
+      if (!a) return;
+      if (!consentGranted()) return;
       (window as any).gtag?.('event', 'conversion', {
         send_to: AW_BOOKING,
         transport_type: 'beacon',
@@ -100,8 +120,16 @@ export const AIToast = () => {
         transport_type: 'beacon',
       });
     };
+    const onContactSent = () => {
+      if (!consentGranted()) return;
+      (window as any).gtag?.('event', 'conversion', { send_to: AW_FORM });
+    };
     document.addEventListener('click', onClick, true);
-    return () => document.removeEventListener('click', onClick, true);
+    window.addEventListener(CONTACT_SENT_EVENT, onContactSent);
+    return () => {
+      document.removeEventListener('click', onClick, true);
+      window.removeEventListener(CONTACT_SENT_EVENT, onContactSent);
+    };
   }, []);
 
   useEffect(() => {
@@ -169,7 +197,8 @@ export const AIToast = () => {
         <p className="text-sm font-semibold text-secondary">LAZAR&apos;S®</p>
 
         <p className="mt-1 text-sm text-secondary/70">
-          Analitikai sütiket használunk a jobb élményért.
+          Analitikai és hirdetésmérési (Google Ads) sütiket használunk, hogy
+          lássuk, mi működik az oldalon és a hirdetéseinkben.
         </p>
 
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 sm:flex-nowrap">

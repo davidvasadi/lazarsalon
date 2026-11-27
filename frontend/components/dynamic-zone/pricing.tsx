@@ -37,7 +37,7 @@ const STRAPI_BASE = (
   .replace(/\/api$/, '');
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
-const VIEWPORT = { once: false, amount: 0.26 } as const;
+const VIEWPORT = { once: true, amount: 0.26 } as const;
 
 /* ──────────────────────────────────────────────
    Motion – CTA mintára (nem egyszeri)
@@ -620,7 +620,7 @@ export function Pricing({
                                     </div>
 
                                     {p.featured ? (
-                                      <span className="shrink-0 inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold bg-charcoal text-secondary">
+                                      <span className="shrink-0 inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold bg-lightblack text-white">
                                         Kiemelt
                                       </span>
                                     ) : null}

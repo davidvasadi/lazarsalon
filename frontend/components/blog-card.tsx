@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
-import { Link } from 'next-view-transitions';
 import Image from 'next/image';
+import Link from 'next/link';
 import React from 'react';
 import Balancer from 'react-wrap-balancer';
 

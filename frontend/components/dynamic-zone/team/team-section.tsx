@@ -100,7 +100,7 @@ type TeamMembersResponse = {
 };
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
-const VIEWPORT = { once: false, amount: 0.26 } as const;
+const VIEWPORT = { once: true, amount: 0.26 } as const;
 
 function norm(v?: string | null) {
   const s = (v ?? '').trim();

@@ -13,8 +13,9 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Phone,
 } from 'lucide-react';
-import { Link } from 'next-view-transitions';
+import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import React, {
   useCallback,
@@ -31,6 +32,26 @@ import { Button } from '@/components/elements/button';
 import { Logo } from '@/components/logo';
 import { huf, pageOfPlan, parsePrice } from '@/lib/shared/plan-pages';
 import { cn } from '@/lib/utils';
+
+// mobile-navbar.tsx
+
+// mobile-navbar.tsx
+
+// mobile-navbar.tsx
+
+// mobile-navbar.tsx
+
+// mobile-navbar.tsx
+
+// mobile-navbar.tsx
+
+// mobile-navbar.tsx
+
+// mobile-navbar.tsx
+
+// mobile-navbar.tsx
+
+// mobile-navbar.tsx
 
 // mobile-navbar.tsx
 
@@ -272,6 +293,9 @@ function coverUrlFromObjects(objs: any[]): string | null {
 }
 
 function coverUrlForPage(p: PageLike): string | null {
+  // a szerver által előre beletett, kisebb (Strapi medium/small) borító — lib/shared/nav-covers.ts
+  const pre = (p as any)?.navCover;
+  if (typeof pre === 'string' && pre) return pre;
   const hero = findHeroLikeComponent(p);
   const dz = (p.dynamic_zone ?? []) as any[];
   return coverUrlFromObjects([hero, ...dz, p]);
@@ -519,10 +543,20 @@ export function UnifiedNavbar({
 
   const queueNavigate = useCallback(
     (href: string, target?: string | null) => {
+      // oldalon belüli cél: azonnal navigál, a menü közben záródik (a lapváltás-animáció: components/page-transition.tsx)
+      if (
+        target !== '_blank' &&
+        href.startsWith('/') &&
+        !href.startsWith('//')
+      ) {
+        router.push(href);
+        closeMenu();
+        return;
+      }
       pendingNavRef.current = { href, target };
       closeMenu();
     },
-    [closeMenu]
+    [closeMenu, router]
   );
 
   const makeNavClick = useCallback(
@@ -553,6 +587,7 @@ export function UnifiedNavbar({
     });
   }, []);
 
+  const SALON_PHONE = '+36 20 348 8481';
   const EASE = [0.22, 1, 0.36, 1] as const;
 
   const scheduleToneUpdate = useCallback(() => {
@@ -671,9 +706,14 @@ export function UnifiedNavbar({
     [activeItem, leftItems]
   );
 
+  // gépen: ha a Szolgáltatások le van nyitva, a Kiemelt eltűnik, a kártyák vízszintesen a teljes szélességet kapják
+  const servicesOpen = leftItems.some(
+    (x) => x.id === openId && (x.pages?.length ?? 0) > 0
+  );
+
   const featuredPages = useMemo(() => {
     const pages = featuredItem?.pages ?? [];
-    return pages.slice(0, 3);
+    return pages.slice(0, 4); // gépen 2×2 rács
   }, [featuredItem]);
 
   useEffect(() => {
@@ -801,6 +841,54 @@ export function UnifiedNavbar({
     [enableFeatured]
   );
 
+  // hívás + foglalás: mindig egymás alatt, egyforma szélesen, felül a (fehér) foglalás, alatta a (sötét) hívás (Dave, 2026-11-27)
+  const menuButtons = (
+    <div className="flex w-full flex-col gap-2.5">
+      <Button
+        variant="primary"
+        as="a"
+        href={`tel:${SALON_PHONE.replace(/\s/g, '')}`}
+        className="group order-2 w-full py-5"
+      >
+        <span className="inline-flex items-center justify-center gap-2">
+          <Phone className="h-4 w-4" />
+          <span>Hívás</span>
+        </span>
+      </Button>
+      {rightItems.map((item) => {
+        const booking = isBookingText(item.text);
+        const href = navHref(locale, item.URL);
+
+        return (
+          <Button
+            key={item.text}
+            variant="outline"
+            as={Link}
+            href={href}
+            target={item.target ?? undefined}
+            onClick={makeNavClick(href, item.target)}
+            className={cn(
+              'border-white bg-white text-lightblack hover:bg-white/90 hover:text-lightblack',
+              booking && 'group order-1 w-full py-5'
+            )}
+          >
+            {booking ? (
+              <span className="inline-flex items-center justify-center gap-2">
+                <CalendarIcon className="h-4 w-4" />
+                <span>{item.text}</span>
+                <span className="w-0 overflow-hidden transition-all duration-300 ease-in-out group-hover:w-5">
+                  →
+                </span>
+              </span>
+            ) : (
+              item.text
+            )}
+          </Button>
+        );
+      })}
+    </div>
+  );
+
   return (
     <>
       <AnimatePresence
@@ -825,6 +913,7 @@ export function UnifiedNavbar({
         {open && (
           <motion.div
             key="menu"
+            data-no-page-leave
             initial={{ opacity: 0, y: 16, scale: 0.985 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.99 }}
@@ -860,7 +949,8 @@ export function UnifiedNavbar({
                     <div
                       className={cn(
                         'flex w-full flex-col items-start justify-start gap-6 md:gap-12',
-                        enableFeatured && 'lg:col-span-7'
+                        enableFeatured &&
+                          (servicesOpen ? 'lg:col-span-12' : 'lg:col-span-7')
                       )}
                     >
                       {leftItems.map((item) => {
@@ -973,21 +1063,9 @@ export function UnifiedNavbar({
                                       willChange:
                                         'max-height, opacity, transform',
                                     }}
-                                    className="ml-3"
+                                    className="pb-1"
                                   >
-                                    <div className="flex flex-col gap-3 border-l border-white/15 pl-4">
-                                      <Link
-                                        href={topHref}
-                                        target={item.target ?? undefined}
-                                        className="text-[18px] text-white/80"
-                                        onClick={makeNavClick(
-                                          topHref,
-                                          item.target
-                                        )}
-                                      >
-                                        Összes
-                                      </Link>
-
+                                    <div className="grid auto-cols-fr grid-flow-col gap-3">
                                       {pages.map((p) => {
                                         const hero = heroForPage(p);
                                         const href = pageHref(locale, p);
@@ -1001,39 +1079,60 @@ export function UnifiedNavbar({
                                           <Link
                                             key={p.id}
                                             href={href}
-                                            className="flex items-center gap-3 rounded-xl py-1.5 pr-2 transition active:bg-white/5 [@media(hover:hover)]:hover:bg-white/5"
                                             onClick={makeNavClick(href, null)}
+                                            className="group relative block aspect-[4/5] w-full overflow-hidden rounded-3xl bg-white/10"
                                           >
-                                            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-white/10">
-                                              {cover ? (
-                                                <div
-                                                  className="absolute inset-0 bg-cover"
-                                                  style={{
-                                                    backgroundImage: `url(${cover})`,
-                                                    backgroundPosition:
-                                                      'center 25%',
-                                                  }}
+                                            {cover ? (
+                                              <div
+                                                className="absolute inset-0 bg-cover"
+                                                style={{
+                                                  backgroundImage: `url(${cover})`,
+                                                  backgroundPosition:
+                                                    'center 25%',
+                                                }}
+                                              />
+                                            ) : null}
+                                            <span
+                                              aria-hidden
+                                              className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"
+                                            />
+                                            <span className="absolute inset-x-3 bottom-3 flex items-end justify-between gap-2">
+                                              <span className="min-w-0">
+                                                <span className="block text-[15px] font-light leading-tight text-white">
+                                                  {
+                                                    hero.heading.split(
+                                                      /\s+[–—-]\s+/
+                                                    )[0]
+                                                  }
+                                                </span>
+                                                {price ? (
+                                                  <span className="mt-1 block text-xs text-muted">
+                                                    {price}
+                                                  </span>
+                                                ) : null}
+                                              </span>
+                                              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-lightblack transition-transform duration-200 group-hover:scale-105">
+                                                <ArrowUpRight
+                                                  className="h-3.5 w-3.5"
+                                                  strokeWidth={2}
                                                 />
-                                              ) : null}
-                                            </div>
-                                            <div className="min-w-0">
-                                              <div className="text-[15px] leading-snug text-white">
-                                                {hero.heading}
-                                              </div>
-                                              {price ? (
-                                                <div className="mt-0.5 text-xs text-muted">
-                                                  {price}
-                                                </div>
-                                              ) : hero.sub ? (
-                                                <div className="mt-0.5 line-clamp-1 text-xs text-white/60">
-                                                  {hero.sub}
-                                                </div>
-                                              ) : null}
-                                            </div>
+                                              </span>
+                                            </span>
                                           </Link>
                                         );
                                       })}
                                     </div>
+                                    <Link
+                                      href={topHref}
+                                      target={item.target ?? undefined}
+                                      onClick={makeNavClick(
+                                        topHref,
+                                        item.target
+                                      )}
+                                      className="mt-4 inline-block text-[15px] text-white/75 hover:text-white"
+                                    >
+                                      Összes szolgáltatás és ár →
+                                    </Link>
                                   </motion.div>
                                 )}
                               </AnimatePresence>
@@ -1041,9 +1140,15 @@ export function UnifiedNavbar({
                           </div>
                         );
                       })}
+
+                      {/* gépen a gombok a bal oszlopban */}
+                      <div className="hidden w-full max-w-md lg:block">
+                        {menuButtons}
+                      </div>
                     </div>
 
                     {enableFeatured &&
+                      !servicesOpen &&
                       (featuredItem?.pages?.length ?? 0) > 0 && (
                         <div className="hidden lg:col-span-5 lg:block">
                           <motion.div
@@ -1067,8 +1172,9 @@ export function UnifiedNavbar({
                               </div>
                             </div>
 
-                            <div className="space-y-3">
-                              {featuredPages.map((p, index) => {
+                            {/* gépen ugyanaz a kártya, mint a mobil almenüben (teli kép, alul átmenet, név + ár + nyíl), 2×2-ben, álló arányban */}
+                            <div className="grid grid-cols-2 gap-3">
+                              {featuredPages.map((p) => {
                                 const hero = heroForPage(p);
                                 const href = pageHref(locale, p);
                                 const cover =
@@ -1079,48 +1185,46 @@ export function UnifiedNavbar({
                                   )
                                     ? coverCache[p.slug]
                                     : null);
+                                const price = fromPrice[p.slug];
 
                                 return (
                                   <Link
                                     key={p.id}
                                     href={href}
                                     onClick={makeNavClick(href, null)}
-                                    className={cn(
-                                      'group block rounded-2xl p-3 transition',
-                                      'bg-white/5 hover:bg-white/10'
-                                    )}
+                                    className="group relative block aspect-[4/5] w-full overflow-hidden rounded-3xl bg-white/10"
                                   >
-                                    <div className="relative overflow-hidden rounded-xl">
-                                      {cover ? (
-                                        <div
-                                          className="h-28 w-full bg-cover"
-                                          style={{
-                                            backgroundImage: `url(${cover})`,
-                                            // portré borítók: fej/haj a felső harmadban -> ~25%.
-                                            // az utolsó kártya máshogy komponált (25%-nál csak
-                                            // a fejtető látszana), ezért az marad center-en.
-                                            backgroundPosition:
-                                              index === featuredPages.length - 1
-                                                ? 'center'
-                                                : 'center 25%',
-                                          }}
+                                    {cover ? (
+                                      <div
+                                        className="absolute inset-0 bg-cover"
+                                        style={{
+                                          backgroundImage: `url(${cover})`,
+                                          backgroundPosition: 'center 25%',
+                                        }}
+                                      />
+                                    ) : null}
+                                    <span
+                                      aria-hidden
+                                      className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"
+                                    />
+                                    <span className="absolute inset-x-3.5 bottom-3.5 flex items-end justify-between gap-2">
+                                      <span className="min-w-0">
+                                        <span className="block text-base font-light leading-tight text-white">
+                                          {hero.heading.split(/\s+[–—-]\s+/)[0]}
+                                        </span>
+                                        {price ? (
+                                          <span className="mt-1 block text-xs text-muted">
+                                            {price}
+                                          </span>
+                                        ) : null}
+                                      </span>
+                                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-lightblack transition-transform duration-200 group-hover:scale-105">
+                                        <ArrowUpRight
+                                          className="h-3.5 w-3.5"
+                                          strokeWidth={2}
                                         />
-                                      ) : (
-                                        <div className="h-28 w-full bg-gradient-to-br from-white/10 via-white/5 to-transparent" />
-                                      )}
-                                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.18),transparent_55%)]" />
-                                    </div>
-
-                                    <div className="mt-2">
-                                      <div className="text-sm text-white">
-                                        {hero.heading}
-                                      </div>
-                                      {hero.sub && (
-                                        <div className="mt-0.5 line-clamp-2 text-xs text-white/60">
-                                          {hero.sub}
-                                        </div>
-                                      )}
-                                    </div>
+                                      </span>
+                                    </span>
                                   </Link>
                                 );
                               })}
@@ -1130,38 +1234,9 @@ export function UnifiedNavbar({
                       )}
                   </div>
 
-                  <div className="mt-auto pb-2 pt-12">
-                    <div className="flex w-full flex-row items-start gap-2.5">
-                      {rightItems.map((item, i) => {
-                        const booking = isBookingText(item.text);
-                        const isPrimary = i === rightItems.length - 1;
-                        const href = navHref(locale, item.URL);
-
-                        return (
-                          <Button
-                            key={item.text}
-                            variant={isPrimary ? 'primary' : 'simple'}
-                            as={Link}
-                            href={href}
-                            target={item.target ?? undefined}
-                            onClick={makeNavClick(href, item.target)}
-                            className={cn(booking && 'group w-full py-5')}
-                          >
-                            {booking ? (
-                              <span className="inline-flex items-center justify-center gap-2">
-                                <CalendarIcon className="h-4 w-4" />
-                                <span>{item.text}</span>
-                                <span className="w-0 overflow-hidden transition-all duration-300 ease-in-out group-hover:w-5">
-                                  →
-                                </span>
-                              </span>
-                            ) : (
-                              item.text
-                            )}
-                          </Button>
-                        );
-                      })}
-                    </div>
+                  {/* telefonon a menü alján */}
+                  <div className="mt-auto pb-2 pt-12 lg:hidden">
+                    {menuButtons}
                   </div>
                 </div>
               </Container>
@@ -1173,6 +1248,7 @@ export function UnifiedNavbar({
               {activeItem && (activeItem.pages?.length ?? 0) > 0 && (
                 <motion.div
                   key="sub"
+                  data-no-page-leave
                   initial={{ x: '100%' }}
                   animate={{ x: 0 }}
                   exit={{ x: '100%' }}

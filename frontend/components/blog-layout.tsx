@@ -1,6 +1,6 @@
 import { IconArrowLeft } from '@tabler/icons-react';
 import { format } from 'date-fns';
-import { Link } from 'next-view-transitions';
+import Link from 'next/link';
 
 import { Container } from './container';
 import DynamicZoneManager from './dynamic-zone/manager';

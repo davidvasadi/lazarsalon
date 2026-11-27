@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  type Transition,
-  type Variants,
-  motion,
-  useReducedMotion,
-} from 'framer-motion';
+import { type Variants, motion, useReducedMotion } from 'framer-motion';
 import { ArrowUpRight, ChevronRight, Clock, MapPin, Phone } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -49,7 +44,7 @@ const STRAPI_BASE = (process.env.NEXT_PUBLIC_STRAPI_URL ?? '').replace(
 );
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
-const VIEWPORT = { once: false, amount: 0.26 } as const;
+const VIEWPORT = { once: true, amount: 0.26 } as const;
 
 function toAbsUrl(url?: string | null) {
   if (!url) return null;
@@ -315,9 +310,6 @@ export const CTA = ({
       ? 'sm:grid-cols-[260px_260px_260px]'
       : 'sm:grid-cols-[260px_260px]';
 
-  const hoverLift = reduce ? undefined : { y: -2 };
-  const hoverTransition: Transition = { duration: 0.22, ease: EASE };
-
   return (
     <motion.section
       variants={sectionV}
@@ -340,8 +332,6 @@ export const CTA = ({
         <motion.div
           variants={gridV}
           className="grid grid-cols-1 md:grid-cols-12 gap-9 md:gap-12 items-start"
-          whileHover={hoverLift}
-          transition={hoverTransition}
         >
           {/* LEFT */}
           <motion.div variants={colV} className="md:col-span-7">
@@ -521,12 +511,7 @@ export const CTA = ({
           </motion.div>
 
           {/* RIGHT (Cover) */}
-          <motion.div
-            variants={colV}
-            whileHover={reduce ? undefined : { y: -4 }}
-            transition={{ duration: 0.24, ease: EASE }}
-            className="md:col-span-5 w-full"
-          >
+          <motion.div variants={colV} className="md:col-span-5 w-full">
             <div className="group relative w-full overflow-hidden rounded-3xl border border-charcoal bg-white shadow-sm">
               <div className="relative h-[240px] md:h-[360px] w-full">
                 {coverUrl ? (

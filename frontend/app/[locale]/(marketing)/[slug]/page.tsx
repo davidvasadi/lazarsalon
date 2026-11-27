@@ -2,12 +2,17 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import ClientSlugHandler from '../ClientSlugHandler';
+import {
+  RelatedServices,
+  hasRelatedServices,
+} from '@/components/related-services';
+import { i18n } from '@/i18n.config';
 import PageContent from '@/lib/shared/PageContent';
-import { getGooglePlace } from '@/lib/shared/google-reviews';
 import { generateMetadataObject } from '@/lib/shared/metadata';
 import {
   cleanStructuredData,
   getPlans,
+  getTeam,
   pageJsonLd,
 } from '@/lib/shared/structured-data';
 import { fetchCollectionType } from '@/lib/strapi';
@@ -58,6 +63,30 @@ export async function generateMetadata(props: {
   });
 }
 
+/** A szolgáltatás- és egyéb oldalak build-kor előre elkészülnek (gyors, gyorsítótárból jönnek), az új oldalak első
+ *  látogatáskor; frissítés a layout `revalidate` értéke szerint. Hiba esetén üres lista → minden oldal igény szerint. */
+export async function generateStaticParams() {
+  const base = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/$/, '');
+  if (!base) return [];
+  try {
+    const out: { locale: string; slug: string }[] = [];
+    for (const locale of i18n.locales) {
+      const res = await fetch(
+        `${base}/api/pages?locale=${locale}&fields[0]=slug&pagination[pageSize]=200`
+      );
+      if (!res.ok) continue;
+      const json = await res.json();
+      for (const p of json?.data ?? []) {
+        if (p?.slug && p.slug !== 'homepage')
+          out.push({ locale, slug: p.slug });
+      }
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
 export default async function Page(props: {
   params: Promise<{ locale: string; slug: string }>;
 }) {
@@ -69,9 +98,9 @@ export default async function Page(props: {
 
   // Unknown slug → real 404 (previously crashed → 500, so Google kept retrying old URLs)
   if (!pageData) notFound();
-  const [plans, place] = await Promise.all([
+  const [plans, team] = await Promise.all([
     getPlans(params.locale),
-    getGooglePlace(),
+    getTeam(params.locale),
   ]);
 
   const localizedSlugs = pageData.localizations?.reduce(
@@ -86,10 +115,17 @@ export default async function Page(props: {
     <>
       {/* a cégadatok, szolgáltatások, GYIK és morzsamenü a kódból (lib/shared/structured-data.ts); a Strapi kézi
           blokkjából csak az marad, amit a kód nem generál */}
-      {jsonLdScript(pageJsonLd(pageData, plans, params.locale, place))}
+      {jsonLdScript(pageJsonLd(pageData, plans, params.locale, team))}
       {jsonLdScript(cleanStructuredData(pageData?.seo?.structuredData))}
       <ClientSlugHandler localizedSlugs={localizedSlugs} />
       <PageContent pageData={pageData} />
+      {hasRelatedServices(params.slug) && (
+        <RelatedServices
+          slug={params.slug}
+          locale={params.locale}
+          plans={plans}
+        />
+      )}
     </>
   );
 }

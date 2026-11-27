@@ -31,6 +31,26 @@ export function parsePrice(raw?: string | null): {
   };
 }
 
+/** A kártyák „-tól” árába csak az oldal fő szolgáltatása számít (pl. a Női hajvágás kártyán ne a hajszárítás ára). */
+export const CARD_PRICE_ONLY: Record<string, RegExp> = {
+  'noi-hajvagas': /női hajvágás/i,
+};
+
+/** árlista-tételek → oldalanként a legalacsonyabb „-tól” ár (Szolgáltatások-kártyák, Kapcsolódó szolgáltatások) */
+export function cardMinPrices(
+  plans: { name?: string | null; price?: string | null }[]
+): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const p of plans ?? []) {
+    const v = parsePrice(p?.price).min;
+    if (!p?.name || !v) continue;
+    const slug = pageOfPlan(p.name);
+    if (CARD_PRICE_ONLY[slug] && !CARD_PRICE_ONLY[slug].test(p.name)) continue;
+    out[slug] = Math.min(out[slug] ?? Infinity, v);
+  }
+  return out;
+}
+
 /** 15000 → „15 000 Ft” */
 export const huf = (n: number) =>
   `${String(Math.round(n)).replace(/\B(?=(\d{3})+$)/g, '\u00a0')} Ft`;

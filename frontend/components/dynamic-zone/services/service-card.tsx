@@ -79,7 +79,7 @@ const DETAILS: Record<string, { title: string; text: string }> = {
   },
   'hajapolo-kezelesek': {
     title: 'Hajápoló kezelések',
-    text: 'Hajápoló kezelés bármely szolgáltatás mellé: a Miracle szérumkezelés a festett, szőkített vagy töredezett hajnak ad vissza fényt és rugalmasságot. Kevin Murphy, Authentic Beauty Concept és Eleven Australia termékekkel dolgozunk.',
+    text: 'Hajápoló kezelés bármely szolgáltatás mellé: a Miracle hajápoló kezelés a festett, szőkített vagy töredezett hajnak ad vissza fényt és rugalmasságot. Kevin Murphy, Authentic Beauty Concept és Eleven Australia termékekkel dolgozunk.',
   },
   'mukorom-es-manikur': {
     title: 'Műköröm és manikűr',

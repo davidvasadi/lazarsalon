@@ -23,7 +23,12 @@ import React, { useMemo, useState } from 'react';
 
 import { Button } from '../elements/button';
 import { Container } from '@/components/container';
+import { CONTACT_SENT_EVENT } from '@/components/toast';
 import { SECTION_TITLE } from '@/lib/shared/typography';
+
+// components/dynamic-zone/form-next-to-section.tsx (vagy ahol ez a komponensed van)
+
+// components/dynamic-zone/form-next-to-section.tsx (vagy ahol ez a komponensed van)
 
 // components/dynamic-zone/form-next-to-section.tsx (vagy ahol ez a komponensed van)
 
@@ -438,6 +443,8 @@ export function FormNextToSection({
 
       setSentName(norm(fullName).split(/\s+/).slice(-1)[0] || '');
       setSuccessMsg('Köszönjük! Hamarosan válaszolunk.');
+      // Google Ads konverzió („Üzenet – kapcsolati űrlap (web)”) — csak SIKERES beküldés után; a mérést a toast.tsx végzi
+      window.dispatchEvent(new Event(CONTACT_SENT_EVENT));
       setFieldErrors({});
       setFullName('');
       setPhone('');
@@ -470,12 +477,12 @@ export function FormNextToSection({
       <Container className="py-16 lg:py-20">
         <div>
           <div className="text-left">
-            <h1
+            <h2
               className={`text-left ${SECTION_TITLE} text-secondary`}
               style={{ color: COLORS.lightblack }}
             >
               {topHeading}
-            </h1>
+            </h2>
 
             {topSub ? (
               <p

@@ -47,7 +47,7 @@ export type GallerySliderBlock = {
 };
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
-const VIEWPORT = { once: false, amount: 0.26 } as const;
+const VIEWPORT = { once: true, amount: 0.26 } as const;
 
 /** IMPORTANT: ne defaultolj localhostra prod miatt */
 const STRAPI_BASE = (

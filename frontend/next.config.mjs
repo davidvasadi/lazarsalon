@@ -28,7 +28,14 @@ const nextConfig = {
   },
 
   images: {
-    unoptimized: true,
+    // Képoptimalizálás BE (márciusban ki lett kapcsolva — valószínűleg az ingyenes Vercel-keret miatt: a Next alapból
+    // 60 mp után újra átméretez). Most: 31 napos tárolás, csak WebP, kevés méretváltozat → havonta pár száz átméretezés,
+    // jóval az ingyenes keret alatt. Fejlesztéskor nincs optimalizálás (helyi Strapi).
+    unoptimized: process.env.NODE_ENV !== 'production',
+    minimumCacheTTL: 2678400,
+    formats: ['image/webp'],
+    deviceSizes: [640, 828, 1200, 1920],
+    imageSizes: [96, 256, 384],
     remotePatterns: [
       {
         protocol,

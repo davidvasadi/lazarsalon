@@ -12,6 +12,8 @@ import { cn } from '@/lib/utils';
 
 // components/dynamic-zone/testimonials/slider.tsx
 
+// components/dynamic-zone/testimonials/slider.tsx
+
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 function clamp(n: number, min: number, max: number) {
@@ -170,7 +172,7 @@ export const TestimonialsSlider = ({
       whileInView={
         reduce ? undefined : { opacity: 1, y: 0, filter: 'blur(0px)' }
       }
-      viewport={{ once: false, amount: 0.25 }}
+      viewport={{ once: true, amount: 0.25 }}
       transition={{ duration: 0.7, ease: EASE }}
       className="w-full"
     >

@@ -2,11 +2,11 @@ import { Metadata } from 'next';
 
 import ClientSlugHandler from './ClientSlugHandler';
 import PageContent from '@/lib/shared/PageContent';
-import { getGooglePlace } from '@/lib/shared/google-reviews';
 import { generateMetadataObject } from '@/lib/shared/metadata';
 import {
   cleanStructuredData,
   getPlans,
+  getTeam,
   pageJsonLd,
 } from '@/lib/shared/structured-data';
 import { fetchCollectionType } from '@/lib/strapi';
@@ -67,9 +67,9 @@ export default async function HomePage(props: {
     filters: { slug: { $eq: 'homepage' }, locale: params.locale },
   });
 
-  const [plans, place] = await Promise.all([
+  const [plans, team] = await Promise.all([
     getPlans(params.locale),
-    getGooglePlace(),
+    getTeam(params.locale),
   ]);
 
   const localizedSlugs = pageData.localizations?.reduce(
@@ -84,7 +84,7 @@ export default async function HomePage(props: {
     <>
       {/* a cégadatok, szolgáltatások, GYIK és morzsamenü a kódból (lib/shared/structured-data.ts); a Strapi kézi
           blokkjából csak az marad, amit a kód nem generál */}
-      {jsonLdScript(pageJsonLd(pageData, plans, params.locale, place))}
+      {jsonLdScript(pageJsonLd(pageData, plans, params.locale, team))}
       {jsonLdScript(cleanStructuredData(pageData?.seo?.structuredData))}
       <ClientSlugHandler localizedSlugs={localizedSlugs} />
       <PageContent pageData={pageData} />

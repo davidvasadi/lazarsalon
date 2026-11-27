@@ -2,7 +2,7 @@
 
 import { format } from 'date-fns';
 import FuzzySearch from 'fuzzy-search';
-import { Link } from 'next-view-transitions';
+import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 
 import { truncate } from '@/lib/utils';

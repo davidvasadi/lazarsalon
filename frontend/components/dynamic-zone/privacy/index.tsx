@@ -329,7 +329,7 @@ export function Privacy(props: Props) {
         {/* Header (ehhez igazítjuk a sidebar top-ot) */}
         <div ref={headerRef} className="max-w-3xl">
           <Subheading className="text-secondary/70">Jogi</Subheading>
-          <Heading className="mt-2">
+          <Heading as="h1" className="mt-2">
             {props.heading ?? 'Jogi dokumentum'}
           </Heading>
 

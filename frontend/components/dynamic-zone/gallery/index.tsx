@@ -78,7 +78,7 @@ type Props = {
 };
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
-const VIEWPORT = { once: false, amount: 0.26 } as const;
+const VIEWPORT = { once: true, amount: 0.26 } as const;
 
 function mediaUrl(m?: StrapiMedia) {
   const u = (m as any)?.url ?? (m as any)?.data?.attributes?.url;

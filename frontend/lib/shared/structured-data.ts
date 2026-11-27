@@ -42,6 +42,11 @@ export const BUSINESS = {
   ],
   hoursText: 'hétfőtől péntekig 10:00–20:00, szombaton 10:00–16:00',
   brands: ['Kevin Murphy', 'Authentic Beauty Concept'],
+  // hivatalos profilok (ugyanazok, mint az oldal láblécében) — az AI-keresők ebből kötik össze a céget a profiljaival
+  social: [
+    'https://www.instagram.com/lazarsalon',
+    'https://www.facebook.com/lazarsalon',
+  ],
 };
 
 const DESCRIPTION =
@@ -61,6 +66,23 @@ export async function getPlans(locale = 'hu'): Promise<Plan[]> {
       pagination: { pageSize: 100 },
     } as any);
     return (plans ?? []).filter((p) => p?.name);
+  } catch {
+    return [];
+  }
+}
+
+export type TeamMember = { name: string; role?: string | null };
+
+/** a csapat (Strapi team-members) — a strukturált adatban munkatársként (employee) jelenik meg */
+export async function getTeam(locale = 'hu'): Promise<TeamMember[]> {
+  try {
+    const team = await fetchCollectionType<TeamMember[]>('team-members', {
+      locale,
+      fields: ['name', 'role'],
+      sort: ['order:asc'],
+      pagination: { pageSize: 50 },
+    } as any);
+    return (team ?? []).filter((m) => m?.name);
   } catch {
     return [];
   }
@@ -94,12 +116,10 @@ function offerOf(p: Plan, locale: string) {
   };
 }
 
-export type Rating = { rating: number | null; count: number | null } | null;
-
 export function businessJsonLd(
   plans: Plan[],
   locale = 'hu',
-  rating: Rating = null
+  team: TeamMember[] = []
 ) {
   const prices = plans
     .flatMap((p) => Object.values(parsePrice(p.price)))
@@ -125,18 +145,8 @@ export function businessJsonLd(
       ? { priceRange: `${Math.min(...prices)}–${Math.max(...prices)} HUF` }
       : {}),
     currenciesAccepted: 'HUF',
-    // valódi Google-értékelés (Places API, hetente frissül) — csak ha van valós adat
-    ...(rating?.rating && rating?.count
-      ? {
-          aggregateRating: {
-            '@type': 'AggregateRating',
-            ratingValue: rating.rating,
-            reviewCount: rating.count,
-            bestRating: 5,
-            worstRating: 1,
-          },
-        }
-      : {}),
+    // aggregateRating SZÁNDÉKOSAN nincs (2026-11-27): a Google irányelvei szerint a saját cégre vonatkozó, más oldalról
+    // (a Google-ből) átvett értékelés nem jelölhető meg strukturált adatban. Az oldalon látható értékelés maradhat.
     areaServed: [
       { '@type': 'City', name: 'Budapest' },
       { '@type': 'AdministrativeArea', name: 'Budapest VI. kerület' },
@@ -150,9 +160,23 @@ export function businessJsonLd(
       'szőkítés',
       'göndör haj (curly) vágás és styling',
       'hajápolás',
+      'melírtechnikák',
+      'műköröm',
+      'manikűr',
+      'géllakk',
       ...BUSINESS.brands,
     ],
-    sameAs: [BUSINESS.mapUrl],
+    sameAs: [BUSINESS.mapUrl, ...BUSINESS.social],
+    ...(team.length
+      ? {
+          employee: team.map((m) => ({
+            '@type': 'Person',
+            name: m.name.trim(),
+            ...(m.role ? { jobTitle: m.role.trim() } : {}),
+            worksFor: { '@id': BUSINESS_ID },
+          })),
+        }
+      : {}),
     potentialAction: {
       '@type': 'ReserveAction',
       target: { '@type': 'EntryPoint', urlTemplate: BUSINESS.bookingUrl },
@@ -181,7 +205,7 @@ export function pageJsonLd(
   page: any,
   plans: Plan[],
   locale = 'hu',
-  rating: Rating = null
+  team: TeamMember[] = []
 ) {
   const slug: string = page?.slug ?? 'homepage';
   const isHome = slug === 'homepage';
@@ -200,7 +224,7 @@ export function pageJsonLd(
     .filter((p: any) => p?.name);
 
   const graph: any[] = [
-    businessJsonLd(plans, locale, rating),
+    businessJsonLd(plans, locale, team),
     {
       '@type': 'WebPage',
       '@id': `${url}#webpage`,
