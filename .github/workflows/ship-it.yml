@@ -170,6 +170,11 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       - name: Build
+        # az oldalak build közben előre elkészülnek (ISR) → a buildnek el kell érnie a Strapit (nyilvános címek, nem titkok)
+        env:
+          NEXT_PUBLIC_API_URL: https://api.lazarsalon.com
+          NEXT_PUBLIC_STRAPI_URL: https://api.lazarsalon.com
+          WEBSITE_URL: https://lazarsalon.com
         run: npm run build
 
   strapi-build:

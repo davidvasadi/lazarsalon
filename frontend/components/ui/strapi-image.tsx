@@ -1,4 +1,3 @@
-import { unstable_noStore as noStore } from 'next/cache';
 import Image from 'next/image';
 import { ComponentProps } from 'react';
 
@@ -30,7 +29,8 @@ export function StrapiImage({
   className,
   ...rest
 }: Readonly<StrapiImageProps>) {
-  noStore();
+  // (a sablon itt unstable_noStore()-t hívott: ez MINDEN oldalt dinamikussá tett — a lábléc logóján keresztül —, így
+  //  a gyorsítótárazás nem működött; csak egy képcímet rak össze, nincs rá szükség — 2026-11-27)
   const imageUrl = getStrapiMedia(src);
   if (!imageUrl) return null;
   return (
