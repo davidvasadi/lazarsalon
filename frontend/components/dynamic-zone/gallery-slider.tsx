@@ -249,10 +249,24 @@ export function GallerySliderSection(
   const heading = data?.heading?.trim() || 'Előtte–utána átalakulások';
   const sub = data?.sub_heading?.trim() || '';
 
-  const pairs = useMemo(
-    () => (data?.before_after_pair ?? []).filter(Boolean) as BeforeAfterPair[],
-    [data?.before_after_pair]
-  );
+  // csak a valódi párok látszanak: mindkét kép megvan ÉS a kettő nem ugyanaz (2026-11-27: több oldalon ugyanaz a kép volt
+  // előtte és utána is — ha egy blokkban nem marad valódi pár, az egész előtte–utána szakasz elrejtődik)
+  const pairs = useMemo(() => {
+    const src = (m?: MediaLike | null) => {
+      const x = m as any;
+      return (x?.data?.attributes?.url ??
+        x?.attributes?.url ??
+        x?.url ??
+        '') as string;
+    };
+    return (
+      (data?.before_after_pair ?? []).filter(Boolean) as BeforeAfterPair[]
+    ).filter((p) => {
+      const b = src(p.before_image);
+      const a = src(p.after_image);
+      return !!b && !!a && b !== a;
+    });
+  }, [data?.before_after_pair]);
 
   const [active, setActive] = useState(0);
   const current = pairs[active] ?? pairs[0];
