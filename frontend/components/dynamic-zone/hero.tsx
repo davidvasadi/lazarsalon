@@ -16,6 +16,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import React, { useCallback, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 // <-- igazítsd a pathot ha máshol van
 import { Button } from '../elements/button';
@@ -157,7 +158,12 @@ function ThemeColorOnHero({
     return () => io.disconnect();
   }, [heroId, heroColor, pageColor]);
 
-  return (
+  // A réteg a <body>-ba kerül (portál): a lapváltás-animáció (components/page-transition.tsx) az oldalt egy mozgatott
+  // (transform) tárolóban csúsztatja — azon belül a fixed nem a képernyőhöz igazodna, és a Safari a csúszás alatt rossz
+  // színt jegyezne meg a notch-sávra (2026-11-27). Első (szerveroldali) rendereléskor még a helyén van, utána portál.
+  const [mounted, setMounted] = React.useState(false);
+  useEffect(() => setMounted(true), []);
+  const bar = (
     <div
       ref={barRef}
       aria-hidden
@@ -165,6 +171,7 @@ function ThemeColorOnHero({
       style={{ backgroundColor: heroColor }}
     />
   );
+  return mounted ? createPortal(bar, document.body) : bar;
 }
 
 /* ──────────────────────────────────────────────────────────────
