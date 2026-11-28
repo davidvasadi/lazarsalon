@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 
 import ClientSlugHandler from './ClientSlugHandler';
 import PageContent from '@/lib/shared/PageContent';
+import { withFullTeam } from '@/lib/shared/enrich-team';
 import { generateMetadataObject } from '@/lib/shared/metadata';
 import {
   cleanStructuredData,
@@ -87,7 +88,7 @@ export default async function HomePage(props: {
       {jsonLdScript(pageJsonLd(pageData, plans, params.locale, team))}
       {jsonLdScript(cleanStructuredData(pageData?.seo?.structuredData))}
       <ClientSlugHandler localizedSlugs={localizedSlugs} />
-      <PageContent pageData={pageData} />
+      <PageContent pageData={await withFullTeam(pageData, params.locale)} />
     </>
   );
 }

@@ -1,9 +1,15 @@
 // components/dynamic-zone/how-it-works/card.tsx
 'use client';
 
-import { motion, useReducedMotion } from 'framer-motion';
+import { m as motion, useReducedMotion } from 'framer-motion';
 import Link from 'next/link';
 import React from 'react';
+
+// components/dynamic-zone/how-it-works/card.tsx
+
+// components/dynamic-zone/how-it-works/card.tsx
+
+// components/dynamic-zone/how-it-works/card.tsx
 
 // components/dynamic-zone/how-it-works/card.tsx
 

@@ -3,7 +3,7 @@
 import {
   AnimatePresence,
   type Variants,
-  motion,
+  m as motion,
   useReducedMotion,
 } from 'framer-motion';
 import {

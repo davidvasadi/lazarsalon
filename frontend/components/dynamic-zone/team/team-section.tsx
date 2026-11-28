@@ -3,7 +3,7 @@
 import {
   type Transition,
   type Variants,
-  motion,
+  m as motion,
   useReducedMotion,
 } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';

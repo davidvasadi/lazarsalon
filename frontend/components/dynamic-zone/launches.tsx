@@ -1,6 +1,6 @@
 'use client';
 
-import { type Variants, motion, useReducedMotion } from 'framer-motion';
+import { type Variants, m as motion, useReducedMotion } from 'framer-motion';
 import Link from 'next/link';
 import React, { useEffect, useMemo, useState } from 'react';
 

@@ -10,11 +10,20 @@ export type GoogleRating = {
   mapsUrl: string | null;
 };
 
+let raw: Promise<any | null> | null = null;
 let pending: Promise<GoogleRating | null> | null = null;
 
-function load(): Promise<GoogleRating | null> {
-  pending ??= fetch('/api/google-reviews')
+/** a teljes /api/google-reviews válasz — látogatásonként EGYSZER kéri le (hero, foglalás-kártya, vélemények blokk is ezt
+ *  használja; korábban a vélemények blokk külön is lekérte) */
+export function loadGoogleReviews(): Promise<any | null> {
+  raw ??= fetch('/api/google-reviews')
     .then((r) => (r.ok ? r.json() : null))
+    .catch(() => null);
+  return raw;
+}
+
+function load(): Promise<GoogleRating | null> {
+  pending ??= loadGoogleReviews()
     .then((d) =>
       d?.configured &&
       typeof d.rating === 'number' &&

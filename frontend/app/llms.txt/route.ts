@@ -149,7 +149,6 @@ export async function GET() {
 - Nyitvatartás: ${BUSINESS.hoursText}; vasárnap zárva
 - [Útvonal (Google Maps)](${BUSINESS.mapUrl})
 - Instagram: ${BUSINESS.social[0]}
-- Facebook: ${BUSINESS.social[1]}
 - [Kapcsolat](${SITE}/hu/kapcsolat)
 
 ## Időpontfoglalás

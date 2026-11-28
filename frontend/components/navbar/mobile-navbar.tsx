@@ -3,7 +3,7 @@
 
 import {
   AnimatePresence,
-  motion,
+  m as motion,
   useMotionValueEvent,
   useScroll,
 } from 'framer-motion';
@@ -30,8 +30,20 @@ import { useNavReveal } from './nav-reveal';
 import { Container } from '@/components/container';
 import { Button } from '@/components/elements/button';
 import { Logo } from '@/components/logo';
+import { STATUS_BAR_COLOR } from '@/components/status-bar-tint';
 import { huf, pageOfPlan, parsePrice } from '@/lib/shared/plan-pages';
 import { cn } from '@/lib/utils';
+import { navigateWithTransition } from '@/lib/view-transition-nav';
+
+// mobile-navbar.tsx
+
+// mobile-navbar.tsx
+
+// mobile-navbar.tsx
+
+// mobile-navbar.tsx
+
+// mobile-navbar.tsx
 
 // mobile-navbar.tsx
 
@@ -427,6 +439,8 @@ const MenuToggle = React.forwardRef<
   { open: boolean; onClick: () => void; className?: string }
 >(function MenuToggle({ open, onClick, className }, ref) {
   const LINE_W = 50;
+  /** nyitva (X) rövidebb vonalak — az 50 px-es keresztben túl nagy volt (Dave, 2026-11-28) */
+  const LINE_W_OPEN = 28;
   const LINE_H = 2;
   const OFFSET = 3;
   const BTN = 40;
@@ -441,7 +455,7 @@ const MenuToggle = React.forwardRef<
     display: 'block',
     transformOrigin: 'center',
     willChange: 'transform, top, opacity',
-    transitionProperty: 'transform, top, opacity',
+    transitionProperty: 'transform, top, opacity, width, margin-left',
     transitionDuration: '320ms',
     transitionTimingFunction: 'cubic-bezier(.22,1,.36,1)',
   };
@@ -450,8 +464,13 @@ const MenuToggle = React.forwardRef<
   const topClosed2 = BTN / 2 + OFFSET;
   const topOpen = BTN / 2;
 
+  const openSize: React.CSSProperties = open
+    ? { width: LINE_W_OPEN, marginLeft: -(LINE_W_OPEN / 2) }
+    : {};
+
   const line1: React.CSSProperties = {
     ...baseLineStyle,
+    ...openSize,
     top: open ? topOpen : topClosed1,
     transform: open
       ? 'translateZ(0) rotate(45deg)'
@@ -460,6 +479,7 @@ const MenuToggle = React.forwardRef<
 
   const line2: React.CSSProperties = {
     ...baseLineStyle,
+    ...openSize,
     top: open ? topOpen : topClosed2,
     transform: open
       ? 'translateZ(0) rotate(-45deg)'
@@ -543,14 +563,14 @@ export function UnifiedNavbar({
 
   const queueNavigate = useCallback(
     (href: string, target?: string | null) => {
-      // oldalon belüli cél: azonnal navigál, a menü közben záródik (a lapváltás-animáció: components/page-transition.tsx)
+      // oldalon belüli cél: View Transitionnel navigál (lib/view-transition-nav.ts)
       if (
         target !== '_blank' &&
         href.startsWith('/') &&
         !href.startsWith('//')
       ) {
-        router.push(href);
-        closeMenu();
+        // a The Place Studio mintájára: a nyitott menü a régi oldallal együtt tolódik ki (a bezárás az új képbe kerül)
+        navigateWithTransition(router, href, closeMenu);
         return;
       }
       pendingNavRef.current = { href, target };
@@ -662,13 +682,19 @@ export function UnifiedNavbar({
     const prevOverflow = html.style.overflow;
     const prevPaddingRight = html.style.paddingRight;
 
+    const prevBg = html.style.backgroundColor;
+
     const sbw = window.innerWidth - html.clientWidth;
     html.style.overflow = 'hidden';
     if (sbw > 0) html.style.paddingRight = `${sbw}px`;
+    // telefonon a képernyő legalját (a Safari alsó sávja alatti csíkot) a lap háttérszíne festi → nyitott menünél a menü
+    // aljának sötétje, különben világosabb csík látszik alul (2026-11-28)
+    html.style.backgroundColor = '#08090a';
 
     return () => {
       html.style.overflow = prevOverflow;
       html.style.paddingRight = prevPaddingRight;
+      html.style.backgroundColor = prevBg;
     };
   }, [scrollLock]);
 
@@ -930,7 +956,16 @@ export function UnifiedNavbar({
               willChange: 'opacity, transform',
             }}
           >
-            <div className="min-h-screen">
+            {/* telefonon a menü teteje a notch-sáv színéből (STATUS_BAR_COLOR) indul és lágyan a menü sötétjébe vált — így
+                a notch és a nyitott menü között nincs látható határ (2026-11-28) */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 top-0 h-[260px] lg:hidden"
+              style={{
+                background: `linear-gradient(to bottom, ${STATUS_BAR_COLOR} 0px, ${STATUS_BAR_COLOR} 40px, ${STATUS_BAR_COLOR}99 120px, transparent 260px)`,
+              }}
+            />
+            <div className="relative min-h-screen">
               <Container>
                 <div className="flex min-h-screen flex-col px-4 pb-10 lg:px-8">
                   <div className="flex w-full justify-end pt-6">

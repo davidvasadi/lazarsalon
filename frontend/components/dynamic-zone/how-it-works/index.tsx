@@ -5,7 +5,7 @@ import {
   AnimatePresence,
   type AnimationPlaybackControls,
   animate,
-  motion,
+  m as motion,
   useMotionValue,
   useMotionValueEvent,
   useReducedMotion,
@@ -32,6 +32,12 @@ import { Heading } from '../../elements/heading';
 import { Subheading } from '../../elements/subheading';
 import { Card } from './card';
 import { SECTION_TITLE } from '@/lib/shared/typography';
+
+// components/dynamic-zone/how-it-works/index.tsx
+
+// components/dynamic-zone/how-it-works/index.tsx
+
+// components/dynamic-zone/how-it-works/index.tsx
 
 // components/dynamic-zone/how-it-works/index.tsx
 

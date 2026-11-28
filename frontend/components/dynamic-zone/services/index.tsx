@@ -6,7 +6,7 @@
 // - gépen: 1 nagy kiemelt kártya (az első szolgáltatás) + kisebb kártyák + foglalás-kártya, mind kitölti a rácsot
 // - telefonon: tömör lista (bélyegkép, név, ár, idő), alatta a foglalás gomb
 // - minden kártyán „X Ft-tól · időtartam”: az ár élőben a Strapi árlistájából (plans), az idő a szolgáltatás hero-jából
-import { type Transition, motion, useReducedMotion } from 'framer-motion';
+import { type Transition, m as motion, useReducedMotion } from 'framer-motion';
 import {
   ArrowUpRight,
   Calendar,
@@ -23,6 +23,12 @@ import { RatingStars } from '@/components/elements/rating-stars';
 import { cardMinPrices, huf } from '@/lib/shared/plan-pages';
 import { SECTION_TITLE } from '@/lib/shared/typography';
 import { fmtRating, useGoogleRating } from '@/lib/shared/use-google-rating';
+
+// components/dynamic-zone/services/index.tsx
+
+// components/dynamic-zone/services/index.tsx
+
+// components/dynamic-zone/services/index.tsx
 
 // components/dynamic-zone/services/index.tsx
 

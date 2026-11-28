@@ -38,6 +38,8 @@ import { SECTION_TITLE } from '@/lib/shared/typography';
 
 // components/dynamic-zone/form-next-to-section.tsx (vagy ahol ez a komponensed van)
 
+// components/dynamic-zone/form-next-to-section.tsx (vagy ahol ez a komponensed van)
+
 type StrapiLinkItem = {
   id?: number;
   text?: string | null;
@@ -721,7 +723,6 @@ export function FormNextToSection({
                       src={contact.coverUrl}
                       alt="Térkép"
                       fill
-                      unoptimized
                       className="object-cover will-change-transform"
                       sizes="(max-width: 768px) 100vw, 50vw"
                       style={{

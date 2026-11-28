@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import React, { useEffect, useMemo, useState } from 'react';
 
 import { IconContainer } from '../icon-container';

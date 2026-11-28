@@ -43,10 +43,8 @@ export const BUSINESS = {
   hoursText: 'hétfőtől péntekig 10:00–20:00, szombaton 10:00–16:00',
   brands: ['Kevin Murphy', 'Authentic Beauty Concept'],
   // hivatalos profilok (ugyanazok, mint az oldal láblécében) — az AI-keresők ebből kötik össze a céget a profiljaival
-  social: [
-    'https://www.instagram.com/lazarsalon',
-    'https://www.facebook.com/lazarsalon',
-  ],
+  // (Facebook-oldaluk nincs — Dave, 2026-11-28)
+  social: ['https://www.instagram.com/lazarssalon/'],
 };
 
 const DESCRIPTION =

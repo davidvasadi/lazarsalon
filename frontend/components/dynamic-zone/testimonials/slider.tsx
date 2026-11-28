@@ -1,12 +1,22 @@
 // components/dynamic-zone/testimonials/slider.tsx
 'use client';
 
-import { motion, useReducedMotion } from 'framer-motion';
+import { m as motion, useReducedMotion } from 'framer-motion';
 import { Star } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { UITestimonial } from './index';
 import { cn } from '@/lib/utils';
+
+// components/dynamic-zone/testimonials/slider.tsx
+
+// components/dynamic-zone/testimonials/slider.tsx
+
+// components/dynamic-zone/testimonials/slider.tsx
+
+// components/dynamic-zone/testimonials/slider.tsx
+
+// components/dynamic-zone/testimonials/slider.tsx
 
 // components/dynamic-zone/testimonials/slider.tsx
 
@@ -61,9 +71,24 @@ export const TestimonialsSlider = ({
     track.scrollTo({ left: child.offsetLeft, behavior: 'smooth' });
   };
 
+  // csak akkor lapozzon magától, amikor a csúszka a képernyőn van (korábban betöltéskor indult, és mire a látogató
+  // odaért, már a sor közepén járt — 2026-11-28); kigörgetéskor megáll
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      { threshold: 0.35 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   // autoplay
   useEffect(() => {
     if (!autorotate) return;
+    if (!inView) return;
     if (items.length <= 1) return;
 
     const t = setInterval(() => {
@@ -76,7 +101,7 @@ export const TestimonialsSlider = ({
 
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autorotate, items.length]);
+  }, [autorotate, inView, items.length]);
 
   // active sync scroll-snap alapján
   useEffect(() => {
@@ -225,8 +250,10 @@ export const TestimonialsSlider = ({
                       />
                     </div>
 
-                    {/* muted kör + fehér csillag (ahogy “a jobb volt”) */}
-                    <div className="absolute -bottom-1 -right-1 rounded-full bg-muted p-1">
+                    {/* muted kör + fehér csillag. Pontosan a Google-profilképbe égetett „Helyi idegenvezető” jelvény fölött
+                        (az avatar ~43/45 pt-jánál), kicsit nagyobb + fehér keret, hogy teljesen takarja — korábban a narancs
+                        jelvény kilógott mögüle (2026-11-28) */}
+                    <div className="absolute bottom-0 right-[2px] flex h-[22px] w-[22px] items-center justify-center rounded-full bg-muted ring-2 ring-white">
                       <Star
                         className="h-3 w-3 text-white fill-white"
                         strokeWidth={1.2}

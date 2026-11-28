@@ -30,3 +30,38 @@ body {
     filter: none !important;
   }
 }
+
+/* iPhone notch-sáv réteg (components/status-bar-tint.tsx): JS előtt (betöltéskor) csak akkor látszik, ha az oldalon van hero */
+[data-status-bar-tint] {
+  display: none;
+}
+@media (max-width: 1023px) {
+  html:has(#hero) [data-status-bar-tint] {
+    display: block;
+  }
+}
+
+/* ===== Lapváltás (2026-11-28, a The Place Studio mintájára, logós függöny nélkül): a régi oldal felfelé kicsúszik, az új
+   alulról feltolja (View Transitions, lib/view-transition-nav.ts). Csak kattintásra; vissza gombnál nincs. */
+@keyframes lz-push-out {
+  to {
+    transform: translateY(-100%);
+  }
+}
+@keyframes lz-push-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+::view-transition-old(root) {
+  animation: lz-push-out 0.6s cubic-bezier(0.76, 0, 0.24, 1) both;
+}
+::view-transition-new(root) {
+  animation: lz-push-in 0.6s cubic-bezier(0.76, 0, 0.24, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}

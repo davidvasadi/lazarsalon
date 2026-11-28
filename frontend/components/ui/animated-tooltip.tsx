@@ -2,7 +2,7 @@
 
 import {
   AnimatePresence,
-  motion,
+  m as motion,
   useMotionValue,
   useSpring,
   useTransform,

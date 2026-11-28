@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  motion,
+  m as motion,
   useReducedMotion,
   useScroll,
   useTransform,
@@ -16,13 +16,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import React, { useCallback, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 
 // <-- igazítsd a pathot ha máshol van
 import { Button } from '../elements/button';
 import { Heading } from '../elements/heading';
 import { Subheading } from '../elements/subheading';
 import { AmbientColor } from '@/components/decorations/ambient-color';
+import { setStatusBarVisible } from '@/components/status-bar-tint';
 import { fmtRating, useGoogleRating } from '@/lib/shared/use-google-rating';
 
 /* ──────────────────────────────────────────────────────────────
@@ -108,6 +108,9 @@ function LocationGlyph(props: React.SVGProps<SVGSVGElement>) {
   Hero látszik => dark
   Hero után => világos
 ────────────────────────────────────────────────────────────── */
+// melyik hero állította be utoljára a lap háttérszínét (lapváltáskor kettő is él egyszerre)
+let htmlBgOwner: object | null = null;
+
 function setThemeColor(color: string) {
   const metas = Array.from(
     document.querySelectorAll('meta[name="theme-color"]')
@@ -133,45 +136,63 @@ function ThemeColorOnHero({
   heroColor: string;
   pageColor: string;
 }) {
-  // iOS 26 Safari: a felső (óra / notch) sávot NEM a theme-color, hanem a lap tetejét érintő fixed elem háttere színezi
-  // (ios-safari-mobile skill, 1. pont; a davelopment booking bevált megoldása). Amíg a hero látszik, egy ≥8 px-es sötét
-  // réteg ül a lap tetején; utána eltűnik (display: none — a színváltást a Safari nem követi, az eltűnést igen).
-  const barRef = React.useRef<HTMLDivElement>(null);
+  // iOS 26 Safari: a felső (óra / notch) sávot a lap tetejét érintő fixed elem színezi. Ezt az ÁLLANDÓ réteg adja a
+  // layoutban (components/status-bar-tint.tsx) — a hero csak jelzi, hogy látszik-e (oldalváltáskor a réteg nem cserélődik,
+  // így a Safari nem vált fehérre). A láthatóság a GÖRGETÉSI POZÍCIÓBÓL jön (offsetTop).
   useEffect(() => {
     const hero = document.getElementById(heroId);
     if (!hero) return;
+    const root = document.documentElement;
+    const token = {};
 
-    // init
-    setThemeColor(heroColor);
-
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        const visible = entry.isIntersecting && entry.intersectionRatio > 0;
-        setThemeColor(visible ? heroColor : pageColor);
-        if (barRef.current)
-          barRef.current.style.display = visible ? '' : 'none';
-      },
-      { threshold: [0, 0.01] }
-    );
-
-    io.observe(hero);
-    return () => io.disconnect();
+    const heroBottom = () => {
+      let y = 0;
+      let el: HTMLElement | null = hero;
+      while (el) {
+        y += el.offsetTop;
+        el = el.offsetParent as HTMLElement | null;
+      }
+      return y + hero.offsetHeight;
+    };
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const visible = window.scrollY < heroBottom() - 1;
+      setThemeColor(visible ? heroColor : pageColor);
+      setStatusBarVisible(visible);
+      // telefonon a képernyő legalját (a Safari alsó sávja alatti csíkot) a lap háttérszíne festi: amíg a hero látszik,
+      // legyen sötét, különben fehér csík marad alul
+      root.style.backgroundColor = visible ? heroColor : '';
+      htmlBgOwner = token;
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (htmlBgOwner === token) {
+        htmlBgOwner = null;
+        // ha közben már egy másik (az új oldal) hero él, az azonnal átveszi; csak ha senki, akkor kapcsolunk ki —
+        // így oldalváltáskor a notch-réteg egy pillanatra sem tűnik el
+        window.dispatchEvent(new Event('scroll'));
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => {
+            if (htmlBgOwner === null) {
+              setStatusBarVisible(false);
+              root.style.backgroundColor = '';
+            }
+          })
+        );
+      }
+    };
   }, [heroId, heroColor, pageColor]);
 
-  // A réteg a <body>-ba kerül (portál): a lapváltás-animáció (components/page-transition.tsx) az oldalt egy mozgatott
-  // (transform) tárolóban csúsztatja — azon belül a fixed nem a képernyőhöz igazodna, és a Safari a csúszás alatt rossz
-  // színt jegyezne meg a notch-sávra (2026-11-27). Első (szerveroldali) rendereléskor még a helyén van, utána portál.
-  const [mounted, setMounted] = React.useState(false);
-  useEffect(() => setMounted(true), []);
-  const bar = (
-    <div
-      ref={barRef}
-      aria-hidden
-      className="pointer-events-none fixed inset-x-0 top-0 z-[60] h-[max(8px,env(safe-area-inset-top))] lg:hidden"
-      style={{ backgroundColor: heroColor }}
-    />
-  );
-  return mounted ? createPortal(bar, document.body) : bar;
+  return null;
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -303,7 +324,10 @@ export const Hero = ({
       className={
         // pt safe-area: a tartalom nem megy fel a notch alá,
         // de a háttér (absolute) igen, ezért NINCS külön cap szükség
-        'relative isolate min-h-[100svh] overflow-hidden bg-[#1D1D1E] pt-[env(safe-area-inset-top)]'
+        // telefonon a háttér a Safari alsó lebegő sávja mögé is leér (100lvh + 80px: iOS 26-on a sáv alatt ~60 pt-tal többet
+        // mutat a Safari, mint a 100lvh — telefonon mérve, 2026-11-28), különben alul a következő, világos szakasz
+        // látszik a sáv mögött (fehér sáv); a tartalom a belső, 100svh-s dobozban a látható részhez igazodik (2026-11-27)
+        'relative isolate min-h-[100svh] max-sm:min-h-[calc(100lvh+80px)] overflow-hidden bg-[#1D1D1E] pt-[env(safe-area-inset-top)]'
       }
     >
       {/* ONLY meta theme-color handling */}
@@ -354,11 +378,24 @@ export const Hero = ({
 
       {/* Ambient glow — MUST be inside hero so notch area matches */}
       <div className="absolute inset-0 z-10 pointer-events-none">
-        {/* AmbientColor eredetileg z-40 volt; itt a hero-n belül legyen finomabb */}
-        <div className="absolute inset-0 opacity-80">
+        {/* AmbientColor eredetileg z-40 volt; itt a hero-n belül legyen finomabb.
+            Telefonon (2026-11-27): a fénycsík ne a bal felső sarokból induljon — lejjebb tolva és felül elhalványítva, így a
+            hero legteteje (a notch alatt) tiszta, nem világosodik ki. Gépen változatlan. */}
+        <div className="absolute inset-0 opacity-80 max-lg:translate-y-[120px] max-lg:opacity-100 max-lg:[mask-image:linear-gradient(to_bottom,transparent,black_90px)]">
           <AmbientColor />
         </div>
       </div>
+
+      {/* telefonon: a hero teteje a notch-sáv színével (HERO_THEME, változatlan) indul, és ~120 px alatt lágyan átvált a
+          képbe — így a notch és a hero teteje között nincs eltérő színű határ (ios-safari-mobile skill 1/b) */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 z-[5] h-[260px] lg:hidden"
+        style={{
+          // felül ~50 px tiszta notch-szín, utána fokozatosan (több lépcsőben) olvad a hero-ba — ne legyen látható váltás
+          background: `linear-gradient(to bottom, ${HERO_THEME} 0px, ${HERO_THEME} 50px, ${HERO_THEME}cc 110px, ${HERO_THEME}66 180px, transparent 260px)`,
+        }}
+      />
 
       {/* Right side static label */}
       <motion.div
@@ -547,7 +584,7 @@ export const Hero = ({
       </div>
 
       {/* Bottom info clusters */}
-      <div className="absolute inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 sm:bottom-10">
+      <div className="absolute inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] max-sm:bottom-[calc(4.5rem+env(safe-area-inset-bottom)+100lvh+80px-100svh)] z-20 sm:bottom-10">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
           <div className="flex items-end justify-between gap-3">
             <motion.div
@@ -609,7 +646,7 @@ export const Hero = ({
       </div>
 
       {/* Scroll cue */}
-      <div className="absolute left-1/2 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-30 -translate-x-1/2 sm:bottom-8">
+      <div className="absolute left-1/2 bottom-[calc(1rem+env(safe-area-inset-bottom))] max-sm:bottom-[calc(1rem+env(safe-area-inset-bottom)+100lvh+80px-100svh)] z-30 -translate-x-1/2 sm:bottom-8">
         <motion.button
           type="button"
           onClick={onScrollCue}

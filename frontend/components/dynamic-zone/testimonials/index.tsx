@@ -1,7 +1,7 @@
 // components/dynamic-zone/testimonials/index.tsx
 'use client';
 
-import { type Variants, motion, useReducedMotion } from 'framer-motion';
+import { type Variants, m as motion, useReducedMotion } from 'framer-motion';
 import { ArrowUpRight, Star } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 
@@ -12,6 +12,15 @@ import { Subheading } from '../../elements/subheading';
 import { TestimonialsSlider } from './slider';
 import { RatingStars } from '@/components/elements/rating-stars';
 import { SECTION_TITLE } from '@/lib/shared/typography';
+import { loadGoogleReviews } from '@/lib/shared/use-google-rating';
+
+// components/dynamic-zone/testimonials/index.tsx
+
+// components/dynamic-zone/testimonials/index.tsx
+
+// components/dynamic-zone/testimonials/index.tsx
+
+// components/dynamic-zone/testimonials/index.tsx
 
 // components/dynamic-zone/testimonials/index.tsx
 
@@ -292,15 +301,10 @@ export const Testimonials = ({
 
   useEffect(() => {
     let alive = true;
-    (async () => {
-      try {
-        const res = await fetch('/api/google-reviews', { method: 'GET' });
-        if (!res.ok) return;
-        const data = (await res.json()) as GooglePlacePayload;
-        if (!alive) return;
-        setGoogle(data);
-      } catch {}
-    })();
+    // közös, látogatásonként egyszeri lekérés (lib/shared/use-google-rating.ts)
+    loadGoogleReviews().then((data) => {
+      if (alive && data) setGoogle(data as GooglePlacePayload);
+    });
     return () => {
       alive = false;
     };

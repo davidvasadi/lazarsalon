@@ -6,9 +6,11 @@ import React from 'react';
 
 import { DraftModeBanner } from '@/components/draft-mode-banner';
 import { Footer } from '@/components/footer';
+import { MotionProvider } from '@/components/motion-provider';
 import { Navbar } from '@/components/navbar';
-import { PageTransition } from '@/components/page-transition';
+import { StatusBarTint } from '@/components/status-bar-tint';
 import { AIToast } from '@/components/toast';
+import { ViewTransitionLinks } from '@/components/view-transition-links';
 import { CartProvider } from '@/context/cart-context';
 import { i18n } from '@/i18n.config';
 import { generateMetadataObject } from '@/lib/shared/metadata';
@@ -64,21 +66,25 @@ export default async function LocaleLayout(props: {
 
   return (
     <CartProvider>
-      <div
-        className={cn(
-          GeistSans.className,
-          'bg-charcoal antialiased h-full w-full'
-        )}
-      >
-        <Navbar
-          data={await withNavCovers(pageData.navbar, locale)}
-          locale={locale}
-        />
-        <PageTransition>{children}</PageTransition>
-        <Footer data={pageData.footer} locale={locale} />
-        <AIToast />
-        {isDraftMode && <DraftModeBanner />}
-      </div>
+      <MotionProvider>
+        <div
+          className={cn(
+            GeistSans.className,
+            'bg-charcoal antialiased h-full w-full'
+          )}
+        >
+          <StatusBarTint />
+          <ViewTransitionLinks />
+          <Navbar
+            data={await withNavCovers(pageData.navbar, locale)}
+            locale={locale}
+          />
+          {children}
+          <Footer data={pageData.footer} locale={locale} />
+          <AIToast />
+          {isDraftMode && <DraftModeBanner />}
+        </div>
+      </MotionProvider>
     </CartProvider>
   );
 }

@@ -4,7 +4,7 @@ import {
   type Transition,
   type Variants,
   animate,
-  motion,
+  m as motion,
   useMotionValue,
   useMotionValueEvent,
   useReducedMotion,
@@ -100,7 +100,7 @@ function MediaFillImage({ media, alt }: { media: any; alt: string }) {
       src={src}
       alt={alt}
       fill
-      unoptimized
+      quality={85}
       draggable={false}
       sizes="(max-width: 1024px) 100vw, 720px"
       className="pointer-events-none select-none object-cover"

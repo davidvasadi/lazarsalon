@@ -8,6 +8,7 @@ import {
 } from '@/components/related-services';
 import { i18n } from '@/i18n.config';
 import PageContent from '@/lib/shared/PageContent';
+import { withFullTeam } from '@/lib/shared/enrich-team';
 import { generateMetadataObject } from '@/lib/shared/metadata';
 import {
   cleanStructuredData,
@@ -118,7 +119,7 @@ export default async function Page(props: {
       {jsonLdScript(pageJsonLd(pageData, plans, params.locale, team))}
       {jsonLdScript(cleanStructuredData(pageData?.seo?.structuredData))}
       <ClientSlugHandler localizedSlugs={localizedSlugs} />
-      <PageContent pageData={pageData} />
+      <PageContent pageData={await withFullTeam(pageData, params.locale)} />
       {hasRelatedServices(params.slug) && (
         <RelatedServices
           slug={params.slug}

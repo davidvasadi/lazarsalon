@@ -1,7 +1,7 @@
 'use client';
 
 import { useScroll, useTransform } from 'framer-motion';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import React, { useRef } from 'react';
 
 export const StickyScroll = ({

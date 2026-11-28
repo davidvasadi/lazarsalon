@@ -4,7 +4,7 @@
 // mint a fölötte lévő Szolgáltatások blokk (duplikáció); most szolgáltatásonként egy tartalmas, kulcsszavas szakasz:
 // kép (felváltva balra / jobbra), H3, leírás, a TELJES árlista időtartammal (élőben a Strapiból), Részletek + Foglalás.
 // A hosszabb leírások itt vannak (a Strapiban nincs rá mező); az árak és az idők a Strapi árlistájából jönnek.
-import { motion, useReducedMotion } from 'framer-motion';
+import { m as motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, Calendar } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';

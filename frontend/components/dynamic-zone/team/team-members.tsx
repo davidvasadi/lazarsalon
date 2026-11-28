@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -213,7 +213,7 @@ export const TeamMembers: React.FC<Props> = ({
                 sizes="(max-width: 640px) 100vw, 280px"
                 className="object-cover object-center transition-transform duration-1000 grayscale group-hover:grayscale-0 group-hover:scale-110"
                 loading="lazy"
-                unoptimized
+                quality={85}
               />
 
               {member.featured ? (
@@ -361,7 +361,7 @@ export function TeamCompact({
                       on ? 'grayscale-0' : 'grayscale',
                     ].join(' ')}
                     loading="lazy"
-                    unoptimized
+                    quality={85}
                   />
                 ) : null}
                 <Link
@@ -419,7 +419,7 @@ export function TeamRows({ members }: { members: TeamMember[] }) {
                     fill
                     sizes="32px"
                     className="object-cover object-top"
-                    unoptimized
+                    quality={85}
                   />
                 ) : null}
               </span>
@@ -449,26 +449,27 @@ export function TeamRows({ members }: { members: TeamMember[] }) {
               transition={{ duration: 0.7 }}
             >
               <div
-                className={['lg:col-span-5', flip ? 'lg:order-2' : ''].join(
+                className={['lg:col-span-4', flip ? 'lg:order-2' : ''].join(
                   ' '
                 )}
               >
-                <div className="relative aspect-[4/5] w-full overflow-hidden rounded-3xl bg-secondary/10">
+                {/* négyzetes, keskenyebb oszlop: a korábbi 4:5-ös, ~650 px magas fotók túl nagyok voltak (2026-11-28) */}
+                <div className="relative mx-auto aspect-square w-full max-w-[420px] overflow-hidden rounded-3xl bg-secondary/10 lg:max-w-none">
                   {img ? (
                     <Image
                       src={img}
                       alt={name ?? ''}
                       fill
-                      sizes="(max-width: 1024px) 100vw, 520px"
+                      sizes="(max-width: 440px) 100vw, 420px"
                       className="object-cover object-top"
                       loading="lazy"
-                      unoptimized
+                      quality={85}
                     />
                   ) : null}
                 </div>
               </div>
               <div
-                className={['lg:col-span-7', flip ? 'lg:order-1' : ''].join(
+                className={['lg:col-span-8', flip ? 'lg:order-1' : ''].join(
                   ' '
                 )}
               >

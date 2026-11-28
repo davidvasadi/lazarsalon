@@ -1,6 +1,6 @@
 'use client';
 
-import { type Variants, motion, useReducedMotion } from 'framer-motion';
+import { type Variants, m as motion, useReducedMotion } from 'framer-motion';
 import { ArrowUpRight, ChevronRight, Clock, MapPin, Phone } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';

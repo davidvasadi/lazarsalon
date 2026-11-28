@@ -1,7 +1,7 @@
 'use client';
 
 import { IconCheck } from '@tabler/icons-react';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import React, { useState } from 'react';
 
 import AddToCartModal from '@/components/products/modal';

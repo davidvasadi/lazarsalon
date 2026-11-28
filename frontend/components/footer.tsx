@@ -11,8 +11,9 @@ type FooterLink = {
 };
 
 const TOKENS: Array<{ label: string; href: string }> = [
-  { label: '[davelopment]®', href: 'https://davelopment.hu' },
-  { label: 'davelopment', href: 'https://davelopment.hu' },
+  // közvetlenül a végső címre (a https://davelopment.hu 308-cal /hu-ra irányít) — 2026-11-28
+  { label: '[davelopment]®', href: 'https://davelopment.hu/hu' },
+  { label: 'davelopment', href: 'https://davelopment.hu/hu' },
   { label: 'Strapi', href: 'https://strapi.io' },
   { label: 'Next.js', href: 'https://nextjs.org' },
   { label: 'Tailwind CSS', href: 'https://tailwindcss.com' },
@@ -224,7 +225,8 @@ function LinkifiedMeta({ text }: { text?: string | null }) {
         key={`${best.href}-${best.start}`}
         href={best.href}
         target="_blank"
-        rel="noreferrer noopener"
+        // csak noopener: a noreferrer miatt a davelopment.hu analitikája nem látta, hogy innen jött a látogató
+        rel="noopener"
         className={linkCls}
       >
         {visible}
